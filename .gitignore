@@ -1,0 +1,18 @@
+/build/*
+**/SFML/**
+*.sdf
+*.exp
+*.opensdf
+/dependencies/**
+**/3rdparty/**
+**/ipch/**
+**/*bckp*/**
+*- Copy
+*.ipdb*
+*.iobj*
+*.opendb
+*.zip
+*.pdb
+*.ilk
+.vs
+/bin/movies/*
