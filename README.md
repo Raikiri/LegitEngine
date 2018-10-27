@@ -1,5 +1,5 @@
 # LegitEngine
-A simple Vulkan framework with approachable architecture
+A simple Vulkan framework with approachable architecture. Quite legit too.
 
 # Why?
 While there are plenty of Vulkan tutorials around, most of them follow the most simple monolith/monobrick program architecture similar to (example from https://vulkan-tutorial.com/)
