@@ -123,8 +123,9 @@ namespace legit
     {
       for (const auto& availablePresentMode : availablePresentModes)
       {
-        if (availablePresentMode == vk::PresentModeKHR::eMailbox)
-          return availablePresentMode;
+        //if (availablePresentMode == vk::PresentModeKHR::eMailbox)
+        if (availablePresentMode == vk::PresentModeKHR::eFifo)
+            return availablePresentMode;
       }
 
       return vk::PresentModeKHR::eFifo;

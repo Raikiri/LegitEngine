@@ -141,17 +141,21 @@
     <ClCompile Include="..\..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\Render\Buffer.h" />
     <ClInclude Include="..\..\src\Render\Core.h" />
     <ClInclude Include="..\..\src\Render\Framebuffer.h" />
     <ClInclude Include="..\..\src\Render\ImageView.h" />
     <ClInclude Include="..\..\src\Render\Pipeline.h" />
+    <ClInclude Include="..\..\src\Render\PresentQueue.h" />
     <ClInclude Include="..\..\src\Render\QueueIndices.h" />
     <ClInclude Include="..\..\src\Render\Render.h" />
     <ClInclude Include="..\..\src\Render\RenderPass.h" />
     <ClInclude Include="..\..\src\Render\RenderStateCache.h" />
     <ClInclude Include="..\..\src\Render\ShaderModule.h" />
+    <ClInclude Include="..\..\src\Render\StagedBuffer.h" />
     <ClInclude Include="..\..\src\Render\Surface.h" />
     <ClInclude Include="..\..\src\Render\Swapchain.h" />
+    <ClInclude Include="..\..\src\Render\VertexDeclaration.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

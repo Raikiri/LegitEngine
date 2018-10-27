@@ -42,5 +42,17 @@
     <ClInclude Include="..\..\src\Render\RenderStateCache.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Render\VertexDeclaration.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Buffer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\StagedBuffer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\PresentQueue.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

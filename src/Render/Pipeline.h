@@ -9,7 +9,11 @@ namespace legit
       return pipeline.get();
     }
   private:
-    Pipeline(vk::Device logicalDevice, vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader, vk::Extent2D viewportSize, vk::RenderPass renderPass)
+    Pipeline(
+      vk::Device logicalDevice, 
+      vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader, 
+      const legit::VertexDeclaration &vertexDecl,
+      vk::RenderPass renderPass)
     {
       auto vertexStageCreateInfo = vk::PipelineShaderStageCreateInfo()
         .setStage(vk::ShaderStageFlagBits::eVertex)
@@ -24,35 +28,20 @@ namespace legit
       vk::PipelineShaderStageCreateInfo shaderStageInfos[] = { vertexStageCreateInfo, fragmentStageCreateInfo };
 
       auto vertexInputInfo = vk::PipelineVertexInputStateCreateInfo()
-        .setVertexBindingDescriptionCount(0)
-        .setPVertexBindingDescriptions(nullptr)
-        .setVertexAttributeDescriptionCount(0)
-        .setPVertexAttributeDescriptions(nullptr);
+        .setVertexBindingDescriptionCount(uint32_t(vertexDecl.GetBindingDescriptors().size()))
+        .setPVertexBindingDescriptions(vertexDecl.GetBindingDescriptors().data())
+        .setVertexAttributeDescriptionCount(uint32_t(vertexDecl.GetVertexAttributes().size()))
+        .setPVertexAttributeDescriptions(vertexDecl.GetVertexAttributes().data());
 
       auto inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo()
         .setTopology(vk::PrimitiveTopology::eTriangleList)
         .setPrimitiveRestartEnable(false);
 
-      auto viewport = vk::Viewport()
-        .setWidth(float(viewportSize.width))
-        .setHeight(float(viewportSize.height))
-        .setMinDepth(0.0f)
-        .setMaxDepth(1.0f);
-
-      auto scissorRect = vk::Rect2D()
-        .setExtent(viewportSize);
-
-      auto viewportStateInfo = vk::PipelineViewportStateCreateInfo()
-        .setViewportCount(1)
-        .setPViewports(&viewport)
-        .setScissorCount(1)
-        .setPScissors(&scissorRect);
-
       auto rasterizationStateInfo = vk::PipelineRasterizationStateCreateInfo()
         .setDepthClampEnable(false)
         .setPolygonMode(vk::PolygonMode::eFill)
         .setLineWidth(1.0f)
-        .setCullMode(vk::CullModeFlagBits::eBack)
+        .setCullMode(vk::CullModeFlagBits::eNone)
         .setFrontFace(vk::FrontFace::eClockwise)
         .setDepthBiasEnable(false);
 
@@ -69,7 +58,10 @@ namespace legit
         .setAttachmentCount(1)
         .setPAttachments(&colorBlendAttachnment);
 
-      auto dynamicStateInfo = vk::PipelineDynamicStateCreateInfo();
+      vk::DynamicState dynamicStates[] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+      auto dynamicStateInfo = vk::PipelineDynamicStateCreateInfo()
+        .setDynamicStateCount(2)
+        .setPDynamicStates(dynamicStates);
 
       auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
         .setSetLayoutCount(0)
@@ -78,18 +70,21 @@ namespace legit
         .setPPushConstantRanges(nullptr);
 
       this->pipelineLayout = logicalDevice.createPipelineLayoutUnique(pipelineLayoutInfo);
-
+      
+      auto viewportState = vk::PipelineViewportStateCreateInfo()
+        .setScissorCount(1)
+        .setViewportCount(1);
       auto pipelineCreateInfo = vk::GraphicsPipelineCreateInfo()
         .setStageCount(2)
         .setPStages(shaderStageInfos)
         .setPVertexInputState(&vertexInputInfo)
         .setPInputAssemblyState(&inputAssemblyInfo)
         .setPRasterizationState(&rasterizationStateInfo)
-        .setPViewportState(&viewportStateInfo)
+        .setPViewportState(&viewportState)
         .setPMultisampleState(&multisampleStateInfo)
         .setPDepthStencilState(nullptr)
         .setPColorBlendState(&colorBlendStateInfo)
-        .setPDynamicState(nullptr)
+        .setPDynamicState(&dynamicStateInfo)
         .setLayout(pipelineLayout.get())
         .setRenderPass(renderPass)
         .setSubpass(0)

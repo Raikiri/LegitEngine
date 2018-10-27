@@ -7,6 +7,7 @@ namespace legit
     void BeginPass(
       vk::CommandBuffer commandBuffer,
       const std::vector<const legit::ImageView *> colorAttachments, const legit::ImageView *depthAttachment,
+      legit::VertexDeclaration vertexDeclaration,
       ShaderModule *vertexShader,
       ShaderModule *fragmentShader,
       vk::Extent2D renderAreaExtent)
@@ -31,9 +32,9 @@ namespace legit
       legit::Framebuffer *framebuffer = GetFramebuffer(framebufferKey);
 
       PipelineKey pipelineKey;
-      pipelineKey.extent = renderAreaExtent;
       pipelineKey.vertexShader = vertexShader->GetHandle();
       pipelineKey.fragmentShader = fragmentShader->GetHandle();
+      pipelineKey.vertexDecl = vertexDeclaration;
       pipelineKey.renderPass = renderPass->GetHandle();
 
       Pipeline *pipeline = GetPipeline(pipelineKey);
@@ -51,6 +52,15 @@ namespace legit
       commandBuffer.beginRenderPass(passBeginInfo, vk::SubpassContents::eInline);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetHandle());
+
+      auto viewport = vk::Viewport()
+        .setWidth(float(renderAreaExtent.width))
+        .setHeight(float(renderAreaExtent.height))
+        .setMinDepth(0.0f)
+        .setMaxDepth(1.0f);
+
+      commandBuffer.setViewport(0, { viewport });
+      commandBuffer.setScissor(0, { vk::Rect2D(vk::Offset2D(), renderAreaExtent) });
     }
     void EndPass(vk::CommandBuffer commandBuffer)
     {
@@ -92,7 +102,7 @@ namespace legit
       vk::RenderPass renderPass;
       bool operator < (const FramebufferKey  &other) const
       {
-        return std::tie(colorAttachments, depthAttachment) < std::tie(other.colorAttachments, other.depthAttachment);
+        return std::tie(colorAttachments, depthAttachment, extent.width, extent.height) < std::tie(other.colorAttachments, other.depthAttachment, other.extent.width, other.extent.height);
       }
     };
     struct PipelineKey
@@ -105,11 +115,14 @@ namespace legit
       }
       vk::ShaderModule vertexShader;
       vk::ShaderModule fragmentShader;
+      legit::VertexDeclaration vertexDecl;
       vk::Extent2D extent;
       vk::RenderPass renderPass;
       bool operator < (const PipelineKey  &other) const
       {
-        return std::tie(vertexShader, fragmentShader, extent.width, extent.height, renderPass) < std::tie(other.vertexShader, other.fragmentShader, other.extent.width, other.extent.height, other.renderPass);
+        return 
+          std::tie(      vertexShader,       fragmentShader,       vertexDecl,       renderPass) < 
+          std::tie(other.vertexShader, other.fragmentShader, other.vertexDecl, other.renderPass);
       }
     };
     legit::RenderPass *GetRenderPass(const RenderPassKey &key)
@@ -131,7 +144,7 @@ namespace legit
     {
       auto &pipeline = pipelineCache[key];
       if (!pipeline)
-        pipeline = core->CreatePipeline(key.vertexShader, key.fragmentShader, key.extent, key.renderPass);
+        pipeline = core->CreatePipeline(key.vertexShader, key.fragmentShader, key.vertexDecl, key.renderPass);
       return pipeline.get();
     }
     legit::Framebuffer *GetFramebuffer(FramebufferKey key)
@@ -150,6 +163,10 @@ namespace legit
           imageViews.push_back(key.depthAttachment);
 
         framebuffer = core->CreateFramebuffer(imageViews, key.extent, key.renderPass);
+      }
+      else
+      {
+        int p = 1;
       }
       return framebuffer.get();
     }

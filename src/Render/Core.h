@@ -21,8 +21,10 @@ namespace legit
       }
 
       this->instance = CreateInstance(resIntanceExtensions, validationLayers);
+      loader = vk::DispatchLoaderDynamic(instance.get());
+
       if(enableDebugging)
-        this->debugUtilsMessenger = CreateDebugUtilsMessenger(instance.get(), DebugMessageCallback);
+        this->debugUtilsMessenger = CreateDebugUtilsMessenger(instance.get(), DebugMessageCallback, loader);
       this->physicalDevice = FindPhysicalDevice(instance.get());
       
       {
@@ -55,17 +57,25 @@ namespace legit
     {
       return std::unique_ptr<RenderPass>(new RenderPass(this->logicalDevice.get(), formats));
     }
-    std::unique_ptr<Pipeline> CreatePipeline(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader, vk::Extent2D viewportSize, vk::RenderPass renderPass)
+    std::unique_ptr<Pipeline> CreatePipeline(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader, const legit::VertexDeclaration &vertexDecl, vk::RenderPass renderPass)
     {
-      return std::unique_ptr<Pipeline>(new Pipeline(this->logicalDevice.get(), vertexShader, fragmentShader, viewportSize, renderPass));
+      return std::unique_ptr<Pipeline>(new Pipeline(this->logicalDevice.get(), vertexShader, fragmentShader, vertexDecl, renderPass));
     }
     std::unique_ptr<Framebuffer> CreateFramebuffer(const std::vector <const legit::ImageView * > &imageViews, vk::Extent2D size, vk::RenderPass renderPass)
     {
       return std::unique_ptr<Framebuffer>(new Framebuffer(this->logicalDevice.get(), imageViews, size, renderPass));
     }
+    std::unique_ptr<legit::Buffer> CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags bufferVisibility)
+    {
+      return std::unique_ptr<legit::Buffer>(new legit::Buffer(physicalDevice, logicalDevice.get(), size, usageFlags, bufferVisibility));
+    }
     vk::CommandPool GetCommandPool()
     {
       return commandPool.get();
+    }
+    vk::Device GetLogicalDevice()
+    {
+      return logicalDevice.get();
     }
     std::vector<vk::UniqueCommandBuffer> AllocateCommandBuffers(size_t count)
     {
@@ -80,6 +90,25 @@ namespace legit
     {
       auto semaphoreInfo = vk::SemaphoreCreateInfo();
       return logicalDevice->createSemaphoreUnique(semaphoreInfo);
+    }
+    vk::UniqueFence CreateFence(bool state)
+    {
+      auto fenceInfo = vk::FenceCreateInfo();
+      if(state)
+        fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+      return logicalDevice->createFenceUnique(fenceInfo);
+    }
+    void WaitForFence(vk::Fence fence)
+    {
+      logicalDevice->waitForFences({ fence }, true, std::numeric_limits<uint64_t>::max());
+    }
+    void ResetFence(vk::Fence fence)
+    {
+      logicalDevice->resetFences({ fence });
+    }
+    void WaitIdle()
+    {
+      logicalDevice->waitIdle();
     }
     vk::Queue GetGraphicsQueue()
     {
@@ -110,7 +139,7 @@ namespace legit
       return vk::createInstanceUnique(instanceCreateInfo);
     }
 
-    static vk::UniqueHandle<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic> CreateDebugUtilsMessenger(vk::Instance instance, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback)
+    static vk::UniqueHandle<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic> CreateDebugUtilsMessenger(vk::Instance instance, PFN_vkDebugUtilsMessengerCallbackEXT debugCallback, vk::DispatchLoaderDynamic &loader)
     {
       auto messengerCreateInfo = vk::DebugUtilsMessengerCreateInfoEXT()
         .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError/* | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo*/)
@@ -118,7 +147,6 @@ namespace legit
         .setPfnUserCallback(debugCallback)
         .setPUserData(nullptr); // Optional
 
-      vk::DispatchLoaderDynamic loader(instance);
       return instance.createDebugUtilsMessengerEXTUnique(messengerCreateInfo, nullptr, loader);
     }
 
@@ -209,16 +237,20 @@ namespace legit
     {
       auto commandPoolInfo = vk::CommandPoolCreateInfo()
         //.setFlags(vk::CommandPoolCreateFlagBits::eTransient)
+        .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
         .setQueueFamilyIndex(familyIndex);
       return logicalDevice.createCommandPoolUnique(commandPoolInfo);
     }
-    QueueFamilyIndices queueFamilyIndices;
+
     vk::UniqueInstance instance;
+    vk::DispatchLoaderDynamic loader;
     vk::UniqueHandle<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic> debugUtilsMessenger;
     vk::PhysicalDevice physicalDevice;
     vk::UniqueDevice logicalDevice;
     vk::UniqueCommandPool commandPool;
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
+
+    QueueFamilyIndices queueFamilyIndices;
   };
 }

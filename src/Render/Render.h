@@ -10,6 +10,8 @@
 
 #include "QueueIndices.h"
 #include "Surface.h"
+#include "VertexDeclaration.h"
+#include "Buffer.h"
 #include "ShaderModule.h"
 #include "Pipeline.h"
 #include "ImageView.h"
@@ -17,4 +19,7 @@
 #include "RenderPass.h"
 #include "Framebuffer.h"
 #include "Core.h"
+
+#include "StagedBuffer.h"
 #include "RenderStateCache.h"
+#include "PresentQueue.h"

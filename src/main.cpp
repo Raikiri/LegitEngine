@@ -17,6 +17,9 @@
 #include <ctime>
 #include <memory>
 #include <sstream>
+
+
+
 int main()
 {
   glfwInit();
@@ -37,83 +40,92 @@ int main()
   windowDesc.hInstance = GetModuleHandle(NULL);
   windowDesc.hWnd = glfwGetWin32Window(window);
   auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, true);
-  auto swapchain = core->CreateSwapchain(windowDesc);
 
-  auto vertexShader   = core->CreateShaderModule("../data/Shaders/spirv/vertexShader.spv");
+  auto vertexShader = core->CreateShaderModule("../data/Shaders/spirv/vertexShader.spv");
   auto fragmentShader = core->CreateShaderModule("../data/Shaders/spirv/fragmentShader.spv");
-  //auto renderPass = core->CreateRenderPass(swapchain->GetFormat());
-  //auto pipeline = core->CreatePipeline(vertexShader->GetHandle(), fragmentShader->GetHandle(), swapchain->GetSize(), renderPass->GetHandle());
-
-  std::vector<const legit::ImageView *> swapchainImageViews = swapchain->GetImageViews();
-  size_t swapchainImagesCount = swapchainImageViews.size();
 
   legit::RenderStateCache renderStateCache(core.get());
-  
-  vk::Rect2D swapchainRect = vk::Rect2D(vk::Offset2D(), swapchain->GetSize());
-
-  std::vector<vk::UniqueCommandBuffer> commandBuffers = core->AllocateCommandBuffers(swapchainImagesCount);
-
-  for(size_t imageIndex = 0; imageIndex < swapchainImagesCount; imageIndex++)
-  {
-    auto buf = commandBuffers[imageIndex].get();
-
-    auto bufferBeginInfo = vk::CommandBufferBeginInfo()
-      .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-    buf.begin(bufferBeginInfo);
-
-    {
-      renderStateCache.BeginPass(buf, { swapchain->GetImageViews()[imageIndex] }, nullptr, vertexShader.get(), fragmentShader.get(), swapchain->GetSize());
-      {
-        buf.draw(3, 1, 0, 0);
-      }
-      renderStateCache.EndPass(buf);
-    }
-    buf.end();
-  }
-
-  vk::UniqueSemaphore imageAvailableSemaphore = core->CreateVulkanSemaphore();
-  vk::UniqueSemaphore renderFinishedSemaphore = core->CreateVulkanSemaphore();
-
+  std::unique_ptr<legit::PresentQueue> presentQueue;
+ 
   /*std::vector<legit::ImageView *> imageViews = {  };
   glm::mat4 matrix;
   glm::vec4 vec;
   auto test = matrix * vec;*/
-
   auto prevFrameTime = std::chrono::system_clock::now();
   size_t framesCount = 0;
 
-  while (!glfwWindowShouldClose(window)) 
+#pragma pack(push, 1)
+  struct Vertex
+  {
+    glm::vec3 pos;
+    glm::vec4 color;
+    glm::vec2 uv;
+  };
+#pragma pack(pop)
+
+  std::vector<Vertex> vertices;
+  legit::VertexDeclaration vertexDecl;
+  {
+    vertexDecl.AddVertexInputBinding(0, sizeof(Vertex));
+    vertexDecl.AddVertexAttribute(0, offsetof(Vertex, pos),   legit::VertexDeclaration::AttribTypes::vec3, 0);
+    vertexDecl.AddVertexAttribute(0, offsetof(Vertex, color), legit::VertexDeclaration::AttribTypes::vec4, 1);
+    vertexDecl.AddVertexAttribute(0, offsetof(Vertex, uv),    legit::VertexDeclaration::AttribTypes::vec2, 2);
+  }
+  vertices.push_back(Vertex{ glm::vec3(0.5f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) });
+  vertices.push_back(Vertex{ glm::vec3(0.5f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) });
+  vertices.push_back(Vertex{ glm::vec3(1.0f, 0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f) });
+
+  auto vertexBuffer = std::make_unique<legit::StagedBuffer>(core.get(), vertices.size() * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
+
+  while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
     {
-      uint32_t imageIndex = swapchain->AcquireNextImage(imageAvailableSemaphore.get()).value;
+      if(!presentQueue)
+      {
+        std::cout << "recreated\n";
+        presentQueue = std::unique_ptr<legit::PresentQueue>(new legit::PresentQueue(core.get(), windowDesc));
+      }
 
-      vk::Semaphore imageAvailableSemaphores[] = { imageAvailableSemaphore.get() };
-      vk::Semaphore renderFinishedSemaphores[] = { renderFinishedSemaphore.get() };
-      vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+      glm::vec2 dir = glm::vec2(0.0f, 0.0f);
 
-      auto submitInfo = vk::SubmitInfo()
-        .setWaitSemaphoreCount(1)
-        .setPWaitSemaphores(imageAvailableSemaphores)
-        .setPWaitDstStageMask(waitStages)
-        .setCommandBufferCount(1)
-        .setPCommandBuffers(&commandBuffers[imageIndex].get())
-        .setSignalSemaphoreCount(1)
-        .setPSignalSemaphores(renderFinishedSemaphores);
+      if (glfwGetKey(window, GLFW_KEY_E))
+        dir += glm::vec2(0.0f, -1.0f);
+      if (glfwGetKey(window, GLFW_KEY_S))
+        dir += glm::vec2(-1.0f, 0.0f);
+      if (glfwGetKey(window, GLFW_KEY_D))
+        dir += glm::vec2(0.0f, 1.0f);
+      if (glfwGetKey(window, GLFW_KEY_F))
+        dir += glm::vec2(1.0f, 0.0f);
 
-      core->GetGraphicsQueue().submit({ submitInfo }, nullptr);
+      for (auto &vertex : vertices)
+      {
+        glm::vec3 offset = glm::vec3(dir * 0.1f, 0.0f);
+        vertex.pos += offset;
+      }
 
-      vk::SwapchainKHR swapchains[] = { swapchain->GetHandle() };
-      auto presentInfo = vk::PresentInfoKHR()
-        .setSwapchainCount(1)
-        .setPSwapchains(swapchains)
-        .setPImageIndices(&imageIndex)
-        .setPResults(nullptr)
-        .setWaitSemaphoreCount(1)
-        .setPWaitSemaphores(renderFinishedSemaphores);
-        
-      core->GetPresentQueue().presentKHR(presentInfo);
+      try
+      {
+        auto frameInfo = presentQueue->BeginFrame();
+        {
+          void *bufferMem = vertexBuffer->Map();
+          memcpy(bufferMem, vertices.data(), vertices.size() * sizeof(Vertex));
+          vertexBuffer->Unmap(frameInfo.commandBuffer);
 
+          renderStateCache.BeginPass(frameInfo.commandBuffer, { frameInfo.imageView }, nullptr, vertexDecl, vertexShader.get(), fragmentShader.get(), presentQueue->GetSize() );
+          {
+            frameInfo.commandBuffer.bindVertexBuffers(0, { vertexBuffer->GetBuffer() }, { 0 });
+            frameInfo.commandBuffer.draw(3, 1, 0, 0);
+          }
+          renderStateCache.EndPass(frameInfo.commandBuffer);
+        }
+        presentQueue->EndFrame();
+      }
+      catch (vk::OutOfDateKHRError err)
+      {
+        core->WaitIdle();
+        presentQueue.reset();
+      }
     }
     framesCount++;
     auto currFrameTime = std::chrono::system_clock::now();
@@ -128,6 +140,8 @@ int main()
       prevFrameTime = currFrameTime;
     }
   }
+
+  core->WaitIdle();
 
 
   glfwDestroyWindow(window);
