@@ -1,8 +1,11 @@
 # LegitEngine
-A simple Vulkan framework with approachable architecture. Quite legit too.
+This is thin rendergraph-based layer between vulkan and you that does most of the synchronization and resource management so that you don't have to. Quite legit too.
 
 # Why?
-While there are plenty of Vulkan tutorials around, most of them follow the most simple monolith/monobrick program architecture similar to (example from https://vulkan-tutorial.com/)
+If you have tried learning vulkan from the popular online tutorials, you're probably used to thinking that vulkan is extremely verbose and cumbersome API that leads to unreadable blocks of monocode such as example from https://vulkan-tutorial.com/ :
+<details><summary>Monobrick example</summary>
+<p>
+    
 ```cpp
     void app::initVulkan() {
         createInstance();
@@ -20,10 +23,8 @@ While there are plenty of Vulkan tutorials around, most of them follow the most 
         createCommandBuffers();
         createSyncObjects();
     }
-    
     void app::cleanup() {
         cleanupSwapChain();
-
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -35,121 +36,93 @@ While there are plenty of Vulkan tutorials around, most of them follow the most 
     }
 ```
 
-In my opinion, not only this approach is very prone to errors due to mismatching 
-resource allocation/deallocation which have to be done manually, it also fails to create a clear picture of how components interact with each other. 
-In my opinion in order to be able to use an API on any meaningful level, it's essential to understand the way its components are supposed to be grouped and connected with each other.
+</p>
+</details>
+
+Those tutorials are great at telling you what different API calls do, but in my opinion the hardest part is actually figuring out how to make a scaleable renderer from those calls, because there's always so many ways to do the same thing and it is often really unclear how it's all actually supposed to come together into something practically useful. For analogy, it's like learning asm: yes, it does give you a deep understanding of how low-level programming works, but it gives you zero insight on how to create a useful and scalable engine from it.
 
 # What is this?
 
-This is a basic vulkan framework that's made for learning purposes, but follows different goals than most other Vulkan tutorial frameworks. 
-Its "meat" is mostly based on aforementioned https://vulkan-tutorial.com/ that explains very well logic behind Vulkan GAPI calls, 
-however, I had different goals in mind when creating it:
-1) Using <vulkan/vulkan.hpp> provides very important benefits compared to plain C api:
-   - compiletime type safety for all flags
-   - automatic resource management via built-in unique pointers eliminates all resource deallocation code and eliminates a lot of potential errors
-   - better syntax with less repetion
-   - use of modern language features and C++ containers such as std::vector<>
-   - automatic and seamless loader for extensions
-   - full compatibility with plain C api if that's needed
-2) My main goal is not to try and make use of all Vulkan's overwhelming flexibility and power, but rather to create a convenient framework with familiar interface similar to what
-most other rendering engines have. 
-3) Even though there is indeed some price for doing things the old-fashioned way, it has a clear benefit of greatly simplifying framework's interface
-5) Only familiar things stick outside from the framework completely isolating user code from automatically managed 
-complex features such as pipelines, render passes and synchonization primitives.
-4) I entirely avoided eny explicit resource deallocation and memory management by using unique pointers and exceptions that in my opinion not only makes code safer but also easier to understand
- 
-Here's what an example of a simple program that draws a triangle with this framework can look like:
+This is a graphics framework based on a concept of a render graph: modern way of designing a realtime renderer where you first define what's going to happen in your entire frame and then the engine can figure out on how to execute it optimally, safely and doing as much synchronization heavylifting automatically as possible. For example, if you say that you're going to use a texture as a rendertarget first and then you're going to sample from it, rendergraph can create all needed barriers just from this information.
+
+# What are its design goals?
+
+My first goal is to provide a way of grouping vulkan entities into objects that are meaningful to directly interact with. For example, a shader class that gives you full reflection data and convenient interface to bind resources. Or an isolated in-flight-queue that does all the image presentation onto a window. 
+
+My second goal is to automate everything that's possible to automate effectively because of access to the structure of the whole frame via render graph. For example, instead of putting image or buffer barriers manually, you're telling graph how you're going to use your images and buffers, and it puts all the barriers automatically. You don't need to deal with many intermediate vulkan entities at all, such as render passes, pipeline layouts, descriptor layouts, etc. 
+
+My third and final goal is to show some good (from my experience) design practices for typical vulkan usage problems that have multiple possible solutions. For example, how do you upload shader resources to materials multiple objects? What if they have the same material? How do make a renderer that can be used for rendering onto a window and headless? How do you manage descriptor sets? How do you implement it using modern type-safe C++?
+
+# What can it do?
+I do a lot of experimentation with various graphics-related and GPGPU algorithms, and this framework has now become my go-to choice for prototyping anything from GI techniques to FFT and physics algorithms. It provides low enough access to GPU to be suitable for the vast majority of my needs and yet convenient enough to be effective when just used directly with vulkan. I spend a little bit more time prototyping stuff with LegitEngine than I would by using an OpenGL-based framework, but then I save enormous amount of time on debugging and profiling because it's designed to be super-easy to do it.
+
+# Minimal code example
+Here's a minimal code example that creates a window, initializes the renderer, creates an in-flight queue with a swapchain attached to that window, handles window resizing/swapchain recreation, and renders a simple fullscreen shader.
 ```cpp
-int main()
+GLFWwindow* window = glfwCreateWindow(1024, 1024, "Legit Vulkan renderer", nullptr, nullptr);
+  
+const char* glfwExtensions[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+uint32_t glfwExtensionCount = 2;
+
+legit::WindowDesc windowDesc = {};
+windowDesc.hInstance = GetModuleHandle(NULL);
+windowDesc.hWnd = glfwGetWin32Window(window);
+
+auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, true);
+
+while (glfwWindowShouldClose(window))
 {
-  glfwInit();
-
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
-
-  uint32_t glfwExtensionCount = 0;
-  const char** glfwExtensions;
-  glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-  legit::WindowDesc windowDesc = {};
-  windowDesc.hInstance = GetModuleHandle(NULL);
-  windowDesc.hWnd = glfwGetWin32Window(window);
-  //single core instance that can be created headless if windowDesc is nullptr
-  //which can be useful for compute-operations only without rendering on a window
-  auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, true);
-
-  auto vertexShader = core->CreateShaderModule("../data/Shaders/spirv/vertexShader.spv");
-  auto fragmentShader = core->CreateShaderModule("../data/Shaders/spirv/fragmentShader.spv");
-
-  legit::RenderStateCache renderStateCache(core.get());
-  std::unique_ptr<legit::PresentQueue> presentQueue;
- 
-#pragma pack(push, 1)
-  struct Vertex
+  glfwPollEvents();
+  if (!inFlightQueue)
   {
-    glm::vec3 pos;
-    glm::vec4 color;
-    glm::vec2 uv;
-  };
-#pragma pack(pop)
-
-  std::vector<Vertex> vertices;
-  legit::VertexDeclaration vertexDecl;
-  {
-    vertexDecl.AddVertexInputBinding(0, sizeof(Vertex));
-    vertexDecl.AddVertexAttribute(0, offsetof(Vertex, pos),   legit::VertexDeclaration::AttribTypes::vec3, 0);
-    vertexDecl.AddVertexAttribute(0, offsetof(Vertex, color), legit::VertexDeclaration::AttribTypes::vec4, 1);
-    vertexDecl.AddVertexAttribute(0, offsetof(Vertex, uv),    legit::VertexDeclaration::AttribTypes::vec2, 2);
+    core->ClearCaches();
+    inFlightQueue = std::unique_ptr<legit::InFlightQueue>(new legit::InFlightQueue(core.get(), windowDesc, 2, vk::PresentModeKHR::eMailbox));
   }
-  vertices.push_back(Vertex{ glm::vec3(0.5f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) });
-  vertices.push_back(Vertex{ glm::vec3(0.5f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) });
-  vertices.push_back(Vertex{ glm::vec3(1.0f, 0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f) });
-
-  auto vertexBuffer = std::make_unique<legit::StagedBuffer>(core.get(), vertices.size() * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
-  while (!glfwWindowShouldClose(window))
+  
+  try
   {
-    glfwPollEvents();
-    if(!presentQueue)
+    auto frameInfo = inFlightQueue->BeginFrame();
     {
-      //when device is lost we recreate only part of the engine that depends on swapchain
-      //it's possible to manage multiple windows with a single instance of core
-      presentQueue = std::unique_ptr<legit::PresentQueue>(new legit::PresentQueue(core.get(), windowDesc));
-    }
-
-    for (auto &vertex : vertices)
-    {
-      //vertices can be changed dynamically here
-    }
-
-    try
-    {
-      auto frameInfo = presentQueue->BeginFrame();
+      core->GetRenderGraph()->AddPass(legit::RenderGraph::ComputePassDesc()
+        .SetColorAttachments({ { frameInfo.swapchainImageViewProxyId, vk::AttachmentLoadOp::eDontCare } })
+        .SetRenderAreaExtent(this->viewportExtent)
+        .SetRecordFunc([this](legit::RenderGraph::RenderPassContext passContext)
       {
-        void *bufferMem = vertexBuffer->Map();
-        memcpy(bufferMem, vertices.data(), vertices.size() * sizeof(Vertex));
-        //memory synchonization is achieved automatically within implementation of vertexBuffer
-        vertexBuffer->Unmap(frameInfo.commandBuffer);
-
-        //pipeline and render pass management is done automatically
-        renderStateCache.BeginPass(frameInfo.commandBuffer, { frameInfo.imageView }, nullptr, vertexDecl, vertexShader.get(), fragmentShader.get(), presentQueue->GetSize() );
-        {
-          frameInfo.commandBuffer.bindVertexBuffers(0, { vertexBuffer->GetBuffer() }, { 0 });
-          frameInfo.commandBuffer.draw(vertices.size(), 1, 0, 0);
-        }
-        //presentation and graphics pipeline synchronization is done automatically
-        renderStateCache.EndPass(frameInfo.commandBuffer);
-      }
-      presentQueue->EndFrame();
+        auto pipeineInfo = core->GetPipelineCache()->BindGraphicsPipeline(passContext.GetCommandBuffer(), passContext.GetRenderPass()->GetHandle(), legit::DepthSettings::Disabled(), { legit::BlendSettings::Opaque() }, legit::VertexDeclaration(), vk::PrimitiveTopology::eTriangleFan, shader.program.get());
+        passContext.GetCommandBuffer().draw(4, 1, 0, 0);
+      }));
     }
-    catch (vk::OutOfDateKHRError err)
-    {
-      core->WaitIdle();
-      presentQueue.reset();
-    }
+    inFlightQueue->EndFrame();
   }
-  return 0;
+  catch (vk::OutOfDateKHRError err)
+  {
+    core->WaitIdle();
+    inFlightQueue.reset();
+  }
 }
-```
+core->WaitIdle();
 
-# What is this not?
-This is by no means a complete engine ready for production. A lot of basic functionality such as handling textures and shader uniforms is lacking. It's made for learning purposes and hopefully can help someone build a clearer picture of how Vulkan renderer can be organized.
+glfwDestroyWindow(window);
+```
+# Demos
+I have included a bunch of very different demos to show how very different algorithms can be implemented using LegitEngine. Here's a quick description of what every demo does.
+
+### Screenspace Variance Global Illumination
+![image](https://user-images.githubusercontent.com/1657728/76221721-5f26c880-627e-11ea-8f2d-def8a1e0c90d.png)
+This is a GI algorithm that calculates unbiased second-bounce diffuse global illumination for geometry in gBuffer. It's fast enough to be used in realtime and I have implemented a version of it for Path of Exile. Here's a showcase of what it can do: https://www.youtube.com/watch?v=OPFvcsQAKjc Version in this repo does not have a denoiser though.
+
+### Volume renderer
+![image](https://user-images.githubusercontent.com/1657728/76222133-06a3fb00-627f-11ea-8880-80403cc7d901.png)
+I have included a very simple unbiased volumetric path tracer. Its code looks more complex than it is, because as like my other demos, it has a lot of experimental code left, most of it is not really used. There are some more pre-rendered images in bin/data/Screenshots/VolumeRenderer folder.
+
+### Textured point sprite renderer
+![image](https://user-images.githubusercontent.com/1657728/76222384-67cbce80-627f-11ea-924d-fc6f8073dc28.png)
+This is an algorithm for rendering big numbers of transparent particles in sorted fashion where particles are first put into buckets of their own size, then sorted and then rendered on screen back-to-front. This algorithm relies heavily on interaction of compute shaders, render passes, synchronization and all kinds of GPU resources. Added benefit is that this representation is very convenient for doing coherent raycasting so I also implemented a GI on it. A demo of this algorithm is showcased here: https://www.youtube.com/watch?v=e8Jsq1K-nPk
+
+### Shrodinger fluid dynamics solver
+![image](https://user-images.githubusercontent.com/1657728/76224694-a6ae5400-6280-11ea-978a-bb5eadaf1ad6.png)
+This is my implementation of this paper http://page.math.tu-berlin.de/~chern/projects/PhDThesis/thesis_reduced.pdf that proposes a way of solving a navier-stokes system of hydrodynamics equations by transforming them into shrodinger's equations that are easier to solve. Shrodinger equations are solved analytically in spectral domain, transformation is done via 3d FFT that's implemented for GPU as well via a compute shader. Point sprite renderer is used to visualize flow direction. Here's a link to more gifs: https://imgur.com/gallery/fIkx6rC
+
+# What can it not do?
+This is not a multirender abstraction over GAPI. It's too low level for that and is designed specifically to make interaction with vulkan more pleasant. It can't do streaming of resources over multiple frames using the rendergraph, because the rendergraph only stores information about 1 frame. 
+
