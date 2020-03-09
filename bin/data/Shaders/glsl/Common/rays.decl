@@ -1,0 +1,65 @@
+struct AABB3f
+{
+  vec3 minPoint;
+  vec3 maxPoint;
+};
+
+struct Ray
+{
+  vec3 origin;
+  vec3 dir;
+};
+
+bool RayAABBIntersect(AABB3f aabb, Ray ray, out float tmin, out float tmax)
+{
+  vec3 t1 = (aabb.minPoint - ray.origin) / ray.dir;
+  vec3 t2 = (aabb.maxPoint - ray.origin) / ray.dir;
+
+  tmin = max(min(t1.x, t2.x), max(min(t1.y, t2.y), min(t1.z, t2.z)));
+  tmax = min(max(t1.x, t2.x), min(max(t1.y, t2.y), max(t1.z, t2.z)));
+  return tmax >= tmin;
+}
+
+bool IsPointInside(AABB3f aabb, vec3 point)
+{
+  return !(any(lessThan(point, aabb.minPoint) ) || any(greaterThan(point, aabb.maxPoint) ));
+}
+
+float sgn(float v)
+{
+  return v > 0.0f ? 1.0f : -1.0f;
+}
+
+vec3 GetRefractedDir(vec3 V, vec3 N, vec3 H, float refractionRatio)
+{
+  /*float c = dot(V, H);
+  float eta = n1 / n2;
+  float m = eta * c - sgn(dot(V, H)) * sqrt(1.0f + eta * (c * c - 1.0f));
+  return H * m - eta * V;*/
+  //V *= -1;
+  /*if(dot(V, H) < 0)
+    H *= -1.0f;*/
+  float r = refractionRatio;
+  float c = -dot(V, H);
+  
+  float tmp = 1.0 - r * r * (1.0 - c * c);
+  if(abs(c) < 1e-3f)
+    return V;
+
+  if(tmp < 1e-3f)
+    return V;
+
+  return (r * V + (r * c + sgn(dot(V, H)) * sqrt(tmp)) * H);
+}
+
+vec3 GetRandomSpherePoint(vec3 seed)
+{
+  vec3 point;
+  do
+  {
+    point = hash33(seed) * 2.0 - 1.0;
+    seed += vec3(10.0, -5.0, -0.42f);
+  }while(dot(point, point) > 1.0);
+
+  return normalize(point);
+}

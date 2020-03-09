@@ -1,0 +1,16 @@
+//#define pointWorldSize 0.2f
+
+struct Point
+{
+	vec4 worldPos;
+	vec4 worldNormal;
+	vec4 directLight;
+	vec4 indirectLight;
+	float worldRadius;
+	float padding[3];
+};
+
+layout(std430, binding = 1, set = 0) buffer PointsBuffer
+{
+	Point data[];
+} pointsBuf;

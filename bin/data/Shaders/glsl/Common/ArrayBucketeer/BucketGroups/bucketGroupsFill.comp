@@ -1,0 +1,22 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+#define WORKGROUP_SIZE 64
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "../passData.decl"
+#include "../../projection.decl"
+#include "../bucketsData.decl"
+#include "../../pointsData.decl"
+#include "../bucketGroupsData.decl"
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    uint bucketGroupIndex = GetBucketGroupIndex(bucketsBuf.data[bucketIndex].pointsCount);
+    uint offset = atomicAdd(bucketGroupsBuf.data[bucketGroupIndex].bucketsCount, 1);
+    groupEntriesPoolBuf.data[bucketGroupsBuf.data[bucketGroupIndex].entryOffset + offset] = bucketIndex;
+  }
+}

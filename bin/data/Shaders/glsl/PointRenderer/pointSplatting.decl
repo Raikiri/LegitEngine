@@ -1,0 +1,89 @@
+const vec2 tileOffsets[] = vec2[](vec2(0, 0), vec2(0.5f, 0), vec2(0, 0.5f), vec2(0.5f, 0.5f));
+
+struct Intersection
+{
+  float dist;
+  float radiusSq;
+  bool exists;
+};
+Intersection RaySplatIntersect(vec3 rayOrigin, vec3 rayDir, vec3 splatPoint, vec3 splatNormal, float splatRadius)
+{
+  float param = -dot(rayOrigin - splatPoint, splatNormal) / dot(rayDir, splatNormal);
+  vec3 point = rayOrigin + rayDir * param;
+  vec3 delta = point - splatPoint;
+  Intersection res;
+  res.dist = param;
+  res.radiusSq = dot(delta, delta);
+  res.exists = /*(res.radiusSq < splatRadius * splatRadius) && */(param > 0.0f);
+  return res;
+}
+
+mat2 Rotation2(float ang)
+{
+  float cosa = cos(ang);
+  float sina = sin(ang);
+  return mat2(cosa, sina, -sina, cosa);
+}
+mat3 CreateBasis(vec3 normal)
+{
+  mat3 res;
+  res[0] = normalize(cross(normal, vec3(0.0f, 1.0f, 0.1f)));
+  res[1] = cross(normal, res[0]);
+  res[2] = normal;
+  return res;
+}
+float rand(vec2 co){
+  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+vec4 GetDebugColor(float val)
+{
+  float hue = 1.0f / (1.0f + val) * 0.9f;
+  return vec4(hsv2rgb(vec3(hue, 1.0f, 1.0f)), 1.0f);
+}
+
+layout(binding = 7, set = 0) uniform sampler2D brushSampler;
+
+
+void SplatPoint(vec3 rayOrigin, vec3 rayDir, uint pointIndex, uint framesCount, inout vec4 resColor)
+{
+  Intersection intersection = RaySplatIntersect(rayOrigin, rayDir, pointsBuf.data[pointIndex].worldPos.xyz, rayDir, pointsBuf.data[pointIndex].worldRadius); ;//point.worldNormal.xyz
+
+  mat3 basis = CreateBasis(rayDir);//point.worldNormal.xyz;
+  vec3 intersectionPoint = rayOrigin + rayDir * intersection.dist;
+  vec2 uv = (transpose(basis) * (intersectionPoint - pointsBuf.data[pointIndex].worldPos.xyz)).xy / pointsBuf.data[pointIndex].worldRadius + vec2(0.5f); 
+  
+  mat2 rotation = Rotation2(rand(vec2(pointIndex / 1000.0f, 0.0f)) * 2.0f * 3.1415f);
+  uv = rotation * (uv - vec2(0.5)) + vec2(0.5);
+  float mult = 1.0f;
+  if(uv.x > 0.0f && uv.y > 0.0f && uv.x < 1.0f && uv.y < 1.0f && intersection.exists || passDataBuf.debugType >= 1)
+  {
+    uint tileIndex = int(rand(vec2(pointIndex / 1000.0f, 0.1f)) * 3.99f);
+    vec2 tileOffset = tileOffsets[tileIndex];
+    //vec4 color = vec4(0.5f, 0.5f, 0.5f, 0.5f);
+    vec4 color = texture(brushSampler, uv * 0.5f + tileOffset);
+
+    if(!(uv.x > 0.0f && uv.y > 0.0f && uv.x < 1.0f && uv.y < 1.0f))
+      color = vec4(0.0f);
+    if(passDataBuf.debugType == 0)
+      color = vec4(0.5f);
+      
+    if(passDataBuf.debugType == 1)
+      color = mix(color, vec4(0.05f), 0.5f);
+
+    vec3 totalLight = max(vec3(0.0), pointsBuf.data[pointIndex].indirectLight.rgb / float(framesCount + 1) + pointsBuf.data[pointIndex].directLight.rgb) + vec3(0.01f);
+    /*float lightStep = 0.02f;
+    float maxVal = 1e-7f + max(totalLight.r, max(totalLight.g, totalLight.b));
+    totalLight = totalLight / maxVal * floor(maxVal / lightStep + 0.5f) * lightStep;*/
+    //color.rgba *= 0.5f;
+    color.rgb *= (0.7f + 0.3f * rand(vec2(pointIndex / 1000.0f, 0.2f)));
+    resColor.rgb += (1.0f - resColor.a) * color.rgb * totalLight; // * color.a
+    resColor.a += (1.0f - resColor.a) * color.a;
+  }
+}

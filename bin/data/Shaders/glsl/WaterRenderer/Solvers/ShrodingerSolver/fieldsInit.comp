@@ -1,0 +1,85 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../simulationData.decl" //binding 0 
+#include "../../../Common/complex.decl"
+
+uniform layout(binding = 1, rgba32f) image3D waveFuncImage;
+uniform layout(binding = 2, r32f) image3D pressureImage;
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  vec3 normPos = (vec3(nodeIndex) + vec3(0.5f)) / vec3(simulationDataBuf.volumeResolution.xyz);
+  vec3 worldPos = GetWorldVolumePoint(normPos);
+  
+  vec3 leftDiff = (normPos - vec3(0.3f, 0.5f, 0.5f));
+  vec3 rightDiff = (normPos - vec3(0.7f, 0.5f, 0.5f));
+  
+  vec3 volumeSize = simulationDataBuf.volumeMax.xyz - simulationDataBuf.volumeMin.xyz;
+
+  vec4 waveFunc = normalize(vec4(1.0f, 0.0f, 0.01f, 0.0f));
+
+  if(simulationDataBuf.iterationIndex == 0)
+  {
+    imageStore(waveFuncImage, nodeIndex, waveFunc);
+  }else
+  {
+    waveFunc = imageLoad(waveFuncImage, nodeIndex);
+  }
+  waveFunc = WaveFunc(Complex(length(waveFunc.xy), 0.0f), Complex(length(waveFunc.zw), 0.0f));
+  
+  //if(length(leftDiff) < 0.1f)
+  /*if(normPos.x > 0.2f && normPos.x < 0.8f)
+  {
+    if(normPos.z > 0.5f)
+    {
+      Complex wavePhase = WavePhase(vec3( 0.05f * volumeSize.x, 0.0f, 0.0f) / simulationDataBuf.h, worldPos, 0.0f, simulationDataBuf.h);
+      imageStore(waveFuncImage, nodeIndex, Mul(wavePhase, waveFunc));
+    }else
+    //if(length(rightDiff) < 0.1f)
+    {
+      Complex wavePhase = WavePhase(vec3(-0.05f * volumeSize.x, 0.0f, 0.0f) / simulationDataBuf.h, worldPos, 0.0f, simulationDataBuf.h);
+      imageStore(waveFuncImage, nodeIndex, Mul(wavePhase, waveFunc));
+    }
+  }*/
+  
+  if(length(leftDiff) < 0.1f)
+  {
+    Complex wavePhase = WavePhase(vec3( 0.25f * volumeSize.x, 0.25f * volumeSize.y, 0.0f) / simulationDataBuf.h, worldPos, 0.0f, simulationDataBuf.h);
+    imageStore(waveFuncImage, nodeIndex, Mul(wavePhase, waveFunc));
+  }else
+  if(length(rightDiff) < 0.1f)
+  {
+    Complex wavePhase = WavePhase(vec3(-0.25f * volumeSize.x, 0.25f * volumeSize.y, 0.0f) / simulationDataBuf.h, worldPos, 0.0f, simulationDataBuf.h);
+    imageStore(waveFuncImage, nodeIndex, Mul(wavePhase, waveFunc));
+  }else
+  {
+    imageStore(waveFuncImage, nodeIndex, waveFunc);
+  }
+
+  //Complex wavePhase = WavePhase(vec3( 0.05f * volumeSize.x, 0.0f, 0.0f) / simulationDataBuf.h, worldPos, 0.0f, simulationDataBuf.h);
+  //imageStore(waveFuncImage, nodeIndex, WaveFunc(wavePhase, Complex(0.0f, 0.0f)));
+  
+  /*float thickness = 0.1f;
+  if(length(leftDiff.yz) < 0.1f && abs(leftDiff.x) < thickness)
+  {
+    float phase = 3.1415f * (1.0f + leftDiff.x / thickness) * 4.0f;
+    Complex wavePhase = Polar(phase);
+    waveFunc = Mul(wavePhase, waveFunc);//WaveFunc(wavePhase, Complex(0.01f, 0.0f));
+    waveFunc = normalize(waveFunc);
+    imageStore(waveFuncImage, nodeIndex, waveFunc);
+  }else
+  {
+    imageStore(waveFuncImage, nodeIndex, waveFunc);
+  }*/
+
+  if(simulationDataBuf.iterationIndex == 0)
+  {
+    imageStore(pressureImage, nodeIndex, vec4(0.0f));
+  }
+}

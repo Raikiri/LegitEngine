@@ -1,0 +1,56 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+#define WORKGROUP_SIZE 64
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "passData.decl"
+#include "../projection.decl"
+#include "bucketsData.decl"
+#include "../pointsData.decl"
+
+bool Compare(uint bucketEntryIndex0, uint bucketEntryIndex1, vec3 _sortDir)
+{
+  return 
+    //(bucketEntriesPoolBuf.data[bucketEntryIndex0].bucketIndex == bucketEntriesPoolBuf.data[bucketEntryIndex1].bucketIndex) &&
+    (dot(_sortDir, pointsBuf.data[bucketEntriesPoolBuf.data[bucketEntryIndex0].pointIndex].worldPos.xyz - pointsBuf.data[bucketEntriesPoolBuf.data[bucketEntryIndex1].pointIndex].worldPos.xyz) < 0.0f);
+}
+
+void Swap(uint bucketEntryIndex0, uint bucketEntryIndex1)
+{
+  BucketEntry t = bucketEntriesPoolBuf.data[bucketEntryIndex0];
+  bucketEntriesPoolBuf.data[bucketEntryIndex0] = bucketEntriesPoolBuf.data[bucketEntryIndex1];
+  bucketEntriesPoolBuf.data[bucketEntryIndex1] = t;
+}
+
+struct Pair
+{
+  uint indices[2];
+};
+Pair GetBitonicPair(uint _pairIndex, uint _blockSizePow, uint _isFirstBlock)
+{
+  uint blockSize = uint(1) << _blockSizePow;
+  //uint blockIndex = pairIndex / (blockSize / 2);
+  uint blockIndex = _pairIndex >> (_blockSizePow - 1);
+  uint blockOffset = blockSize * blockIndex;
+
+  //uint blockLocalIndex0 = pairIndex % (blockSize / 2);
+  uint blockLocalIndex0 = _pairIndex & ((blockSize >> 1) - 1);
+  uint blockLocalIndex1 = (_isFirstBlock == 1) ? (blockSize - 1 - blockLocalIndex0) : (blockLocalIndex0 + blockSize / 2);
+  
+  Pair pair;
+  pair.indices[0] = blockOffset + blockLocalIndex0;
+  pair.indices[1] = blockOffset + blockLocalIndex1;
+  return pair;
+}
+
+void main() 
+{
+  uint pairIndex = uint(gl_GlobalInvocationID.x);
+  if(pairIndex < (1 << passDataBuf.maxSizePow))
+  {
+    Pair pair = GetBitonicPair(pairIndex, passDataBuf.blockSizePow, passDataBuf.isFirstBlock);
+    if (pair.indices[1] < passDataBuf.totalBucketsCount && Compare(pair.indices[0], pair.indices[1], passDataBuf.sortDir.xyz))
+      Swap(pair.indices[0], pair.indices[1]);
+  }
+}

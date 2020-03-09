@@ -1,0 +1,69 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 32
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+layout(binding = 0, set = 0) uniform BucketCastData
+{
+  mat4 viewMatrix; //world -> camera
+  mat4 projMatrix; //camera -> ndc
+  int totalBucketsCount;
+  float time;
+  int framesCount;
+} passDataBuf;
+
+#include "../Common/projection.decl"
+#include "../Common/ListBucketeer/bucketsData.decl"
+#include "../Common/ListBucketeer/pointsListData.decl"
+#include "../Common/pointsData.decl"
+
+void main() 
+{
+  /*mat4 viewProjMatrix = passDataBuf.projMatrix * passDataBuf.viewMatrix;
+  mat4 invViewProjMatrix = inverse(viewProjMatrix);
+  
+  ivec2 bucketCoord = ivec2(gl_GlobalInvocationID.xy);
+
+  vec2 centerScreenCoord = (vec2(bucketCoord) + vec2(0.5f)) / vec2(mipInfosBuf.data[0].size.xy);
+
+  vec3 rayOrigin = Unproject(vec3(centerScreenCoord, 0.0f), invViewProjMatrix);
+  vec3 rayEnd = Unproject(vec3(centerScreenCoord, 1.0f), invViewProjMatrix);
+  vec3 rayDir = normalize(rayEnd - rayOrigin);
+  
+  uint bucketIndex = GetBucketBlockIndices(centerScreenCoord, 0, vec2(0.0f))[0];
+  
+  if(bucketIndex != uint(-1))*/
+  
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    /*bucketsBuf.data[bucketIndex].blockHeadPointIndex = bucketsBuf.data[bucketIndex].headPointIndex;
+      
+    for(uint pointIndex = bucketsBuf.data[bucketIndex].blockHeadPointIndex; pointIndex != uint(-1); pointIndex = pointsListBuf.data[pointIndex].nextPointIndex)
+    {
+      blockPointsListBuf.data[pointIndex].lists[0].nextPointIndex = pointsListBuf.data[pointIndex].nextPointIndex;
+      blockPointsListBuf.data[pointIndex].lists[1].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[2].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[3].nextPointIndex = uint(-1);
+    }*/
+    BucketLocation bucketLocation = GetBucketLocation(bucketIndex);
+    mat4 invViewProjMatrix = inverse(passDataBuf.projMatrix * passDataBuf.viewMatrix);
+    vec2 screenCoord = (vec2(bucketLocation.localCoord) + vec2(0.5f)) / vec2(mipInfosBuf.data[bucketLocation.mipLevel].size.xy);
+    vec3 rayDir = normalize(
+      Unproject(vec3(screenCoord, 1.0f), invViewProjMatrix) -
+      Unproject(vec3(screenCoord, 0.0f), invViewProjMatrix));
+
+    uint currPointIndex = bucketsBuf.data[bucketIndex].headPointIndex;
+    vec3 currRayLight = vec3(0.0f);
+    while(currPointIndex != uint(-1))
+    {
+      float NdotL = dot(pointsBuf.data[currPointIndex].worldNormal.xyz, rayDir);
+      pointsBuf.data[currPointIndex].indirectLight.rgb = (pointsBuf.data[currPointIndex].indirectLight.rgb * passDataBuf.framesCount + currRayLight *  vec3(max(0.0f, -NdotL))) / (passDataBuf.framesCount + 1);
+      if(NdotL > 0.0f)
+        currRayLight = pointsBuf.data[currPointIndex].directLight.rgb;
+      currPointIndex = pointsListBuf.data[currPointIndex].nextPointIndex;
+    }
+  }
+}

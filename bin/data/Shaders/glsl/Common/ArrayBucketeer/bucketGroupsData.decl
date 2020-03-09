@@ -1,0 +1,25 @@
+struct BucketGroup
+{
+  uint bucketsCount;
+  uint entryOffset;
+  uint bucketIndexGlobalOffset;
+  float padding;
+};
+
+layout(std430, binding = 5, set = 0) buffer BucketGroupsBuffer
+{
+  BucketGroup data[];
+}bucketGroupsBuf;
+
+uint GetBucketGroupIndex(uint pointsCount)
+{
+  if(pointsCount == 0)
+    return 0;
+  float groupIndexFloat = log2(float(pointsCount));
+  return min(passDataBuf.bucketGroupsCount - 1, uint(groupIndexFloat) + 1);
+}
+
+layout(std430, binding = 6, set = 0) buffer GroupEntriesPoolBuffer
+{
+  uint data[];
+}groupEntriesPoolBuf;

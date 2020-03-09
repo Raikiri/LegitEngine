@@ -1,0 +1,11 @@
+layout(binding = 0, set = 0) uniform PassDataBuffer
+{
+  mat4 viewMatrix; //world -> camera
+  mat4 projMatrix; //camera -> ndc
+  vec4 sortDir;
+  uint mipsCount;
+  uint totalBucketsCount;
+  float time;
+  int debugMip;
+  int debugType;
+} passDataBuf;

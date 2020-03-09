@@ -1,0 +1,24 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "SimulationData.decl" //binding 0 
+
+uniform layout(binding = 1, rgba32f) image3D srcVelocityImage;
+uniform layout(binding = 2, r32f) image3D srcPressureImage;
+
+uniform layout(binding = 3, rgba32f) image3D dstVelocityImage;
+uniform layout(binding = 4, r32f) image3D dstPressureImage;
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  imageStore(dstVelocityImage, nodeIndex, 
+    imageLoad(srcVelocityImage, nodeIndex));
+  imageStore(dstPressureImage, nodeIndex, 
+    imageLoad(srcPressureImage, nodeIndex));
+}
+

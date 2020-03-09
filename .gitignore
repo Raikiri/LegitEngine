@@ -3,7 +3,6 @@
 *.sdf
 *.exp
 *.opensdf
-/dependencies/**
 **/3rdparty/**
 **/ipch/**
 **/*bckp*/**
@@ -14,5 +13,9 @@
 *.zip
 *.pdb
 *.ilk
+*.img
+*.dat
+*_u.spv
 .vs
 /bin/movies/*
+/bin/data/Meshes/*

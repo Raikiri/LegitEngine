@@ -1,0 +1,123 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 32
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = 1 ) in;
+
+layout(binding = 0, set = 0) uniform BucketCastData
+{
+  mat4 viewMatrix; //world -> camera
+  mat4 projMatrix; //camera -> ndc
+  vec4 viewportSize;
+  float time;
+  int framesCount;
+};
+struct Bucket
+{
+  uint pointIndex;
+  uint pointDataCount;
+};
+
+layout(std430, binding = 1, set = 0) buffer BucketData
+{
+  Bucket bucketData[];
+};
+
+#define PointIndex uint
+#define null PointIndex(-1)
+
+struct Point
+{
+  vec4 worldPos;
+  vec4 worldNormal;
+  vec4 directLight;
+  vec4 indirectLight;
+  PointIndex next;
+  float padding[3];
+};
+
+layout(std430, binding = 2, set = 0) buffer PointData
+{
+  Point pointData[];
+};
+
+vec3 Unproject(vec3 screenPos, mat4 inverseProjectionMatrix)
+{
+  vec4 viewPos = inverseProjectionMatrix * vec4((screenPos.xy * 2.0 - 1.0), screenPos.z, 1.0);
+  viewPos /= viewPos.w;
+  return viewPos.xyz;
+}
+
+vec3 Project(vec3 viewPos, mat4 projectionMatrix)
+{
+  vec4 normalizedDevicePos = projectionMatrix * vec4(viewPos, 1.0);
+  normalizedDevicePos.xyz /= normalizedDevicePos.w;
+
+  vec3 screenPos = vec3(normalizedDevicePos.xy * 0.5 + vec2(0.5), normalizedDevicePos.z);
+  return screenPos;
+}
+
+uint GetListSize(PointIndex head)
+{
+  uint count = 0;
+  PointIndex curr = head;
+  while (curr != null)
+  {
+    count++;
+    curr = pointData[curr].next;
+  }
+  return count;
+}
+
+PointIndex SortedInsert(PointIndex head, PointIndex newPoint, vec3 sortDir, inout uint err)
+{
+  err++;
+  if (head == null || dot(pointData[head].worldPos.xyz - pointData[newPoint].worldPos.xyz, sortDir) >= 0.0f)
+  {
+    pointData[newPoint].next = head;
+    head = newPoint;
+  }
+  else
+  {
+    PointIndex curr = head;
+    for (; pointData[curr].next != null && dot(pointData[pointData[curr].next].worldPos.xyz - pointData[newPoint].worldPos.xyz, sortDir) < 0.0f && err < 1000000; curr = pointData[curr].next)
+    {
+      err++;
+    }
+    pointData[newPoint].next = pointData[curr].next;
+    pointData[curr].next = newPoint;
+  }
+  return head;
+}
+
+
+void main() 
+{
+  mat4 viewProjMatrix = projMatrix * viewMatrix;
+  mat4 invViewProjMatrix = inverse(viewProjMatrix);
+  
+  ivec2 bucketCoord = ivec2(gl_GlobalInvocationID.xy);
+
+  vec2 centerScreenCoord = (vec2(bucketCoord) + vec2(0.5f)) / viewportSize.xy;
+  ivec2 size = ivec2(viewportSize.x + 0.5f, viewportSize.y + 0.5f);
+
+  vec3 rayOrigin = Unproject(vec3(centerScreenCoord, 0.0f), invViewProjMatrix);
+  vec3 rayEnd = Unproject(vec3(centerScreenCoord, 1.0f), invViewProjMatrix);
+  vec3 rayDir = normalize(rayEnd - rayOrigin);
+  
+  int index = bucketCoord.x + bucketCoord.y * size.x;
+  if(bucketCoord.x > 0 && bucketCoord.y > 0 && bucketCoord.x < size.x && bucketCoord.y < size.y)
+  {
+    //uint prev = atomicExchange(bucketData[bucketCoord.x + bucketCoord.y * size.x].pointDataCount, uint(-1));
+    PointIndex head = bucketData[bucketCoord.x + bucketCoord.y * size.x].pointIndex;
+    vec3 currRayLight = vec3(0.0f);
+    while(head != null)
+    {
+      float NdotL = dot(pointData[head].worldNormal.xyz, rayDir);
+      pointData[head].indirectLight.rgb = (pointData[head].indirectLight.rgb * framesCount + currRayLight *  vec3(max(0.0f, -NdotL))) / (framesCount + 1);
+      if(NdotL > 0.0f)
+        currRayLight = pointData[head].directLight.rgb;
+      head = pointData[head].next;
+    }
+  }
+}

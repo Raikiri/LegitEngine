@@ -1,0 +1,10 @@
+struct PointNode
+{
+	uint nextPointIndex;
+	float dist;
+};
+
+layout(std430, binding = 4, set = 0) buffer PointsListBuffer
+{
+	PointNode data[];
+} pointsListBuf;

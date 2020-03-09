@@ -1,0 +1,135 @@
+struct PointListNode
+{
+  uint nextPointIndex;
+};
+
+struct BlockPointNode
+{
+  PointListNode lists[4];
+};
+
+layout(std430, binding = 5, set = 0) buffer BlockPointsListBuffer
+{
+  BlockPointNode data[];
+} blockPointsListBuf;
+
+struct SplatList
+{
+  uint headPointIndex;
+  uint blockListNumber;
+};
+
+/*layout(std430, binding = 8, set = 0) buffer SplatListsBuffer
+{
+  SplatList data[];
+} splatListsBuf;*/
+
+#define MaxMipsCount 20
+struct SplatLists
+{
+  SplatList lists[MaxMipsCount];
+};
+SplatLists splatLists;
+
+bool Compare(/*inout SplatLists splatLists, */uint i, uint j)
+{
+  //return dot(sortDir, pointsBuf.data[bucketEntriesPoolBuf.data[startIndex + i].pointIndex].worldPos.xyz - pointsBuf.data[bucketEntriesPoolBuf.data[startIndex + j].pointIndex].worldPos.xyz) < 0.0f;
+  uint pointIndex0 = splatLists.lists[i].headPointIndex;
+  float pointDist0 = pointsListBuf.data[pointIndex0].dist;
+  uint pointIndex1 = splatLists.lists[j].headPointIndex;
+  float pointDist1 = pointsListBuf.data[pointIndex1].dist;
+
+  return (pointDist0 - pointDist1) > 0.0f;
+}
+
+void Swap(/*inout SplatLists splatLists, */uint i, uint j)
+{
+  SplatList tmp = splatLists.lists[j];
+  splatLists.lists[j] = splatLists.lists[i];
+  splatLists.lists[i] = tmp;
+}
+
+void SiftDown(/*inout SplatLists splatLists, */uint begin, uint end)
+{
+  uint root = begin;
+
+  while (root * 2 + 1 < end)
+  {
+    uint child = root * 2 + 1;
+    if (child + 1 < end && Compare(/*splatLists, */child, child + 1))
+      child = child + 1;
+    if (Compare(/*splatLists, */root, child))
+    {
+      Swap(/*splatLists, */root, child);
+      root = child;
+    }
+    else
+    {
+      return;
+    }
+  }
+}
+
+void Heapify(/*inout SplatLists splatLists, */uint count)
+{
+  int begin = int(count > 1 ? ((count - 1) / 2) : 0);
+
+  while (begin >= 0)
+  {
+    SiftDown(/*splatLists, */uint(begin), count);
+    begin--;
+  }
+}
+
+uint AdvanceLists(/*inout SplatLists splatLists, */inout uint count)
+{
+  if(count == 0)
+    return -1;
+  uint pointIndex = splatLists.lists[0].headPointIndex;
+  if(pointIndex != uint(-1))
+  {
+    splatLists.lists[0].headPointIndex = blockPointsListBuf.data[pointIndex].lists[splatLists.lists[0].blockListNumber].nextPointIndex;
+  }
+
+  if(splatLists.lists[0].headPointIndex == uint(-1) && count > 0)
+  {
+    Swap(/*splatLists, */0, count - 1);
+    count--;
+  }
+  
+  SiftDown(/*splatLists, */0, count);
+  return pointIndex;
+}
+
+uint BuildBlockLists(vec2 centerScreenCoord)
+{
+  uint mipsCount = mipInfosBuf.data.length();
+
+  uint listsCount = 0;
+  //SplatLists splatLists;
+  for(int mipNumber = 0; mipNumber < mipsCount; mipNumber++)
+  {
+    uint mipLevel = mipsCount - 1 - mipNumber;
+    //uint mipIndex = 2;
+    if(passDataBuf.debugMip >= 0 && mipLevel != passDataBuf.debugMip)
+      continue;
+    ivec2 bucketCoord = GetBucketClampedCoord(centerScreenCoord, mipLevel, vec2(0.0f));
+    uint bucketIndex = GetBucketIndexSafe(bucketCoord, mipLevel);
+    
+    if(bucketIndex == uint(-1))
+    {
+      continue;
+    }
+    BucketLocation bucketLocation = GetBucketLocation(bucketIndex);
+    uint listNumber = GetBoxListNumber(bucketLocation.localCoord);
+
+    uint headPointIndex = bucketsBuf.data[bucketIndex].blockHeadPointIndex;
+    if(headPointIndex != uint(-1))
+    {
+      splatLists.lists[listsCount].headPointIndex = headPointIndex;
+      splatLists.lists[listsCount].blockListNumber = listNumber;
+      listsCount++;
+    }
+  }
+  return listsCount;
+}

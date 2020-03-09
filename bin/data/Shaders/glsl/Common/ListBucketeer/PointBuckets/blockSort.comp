@@ -1,0 +1,78 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "../passData.decl"
+#include "../../projection.decl"
+#include "../bucketsData.decl"
+#include "../pointsListData.decl"
+#include "../blockPointsListData.decl"
+
+uint AdvanceLists(inout uvec4 pointIndices, inout vec4 pointDists)
+{
+  float maxDist = 1e7f;
+  uint bestCoord = uint(-1);
+  for(int i = 0; i < 4; i++)
+  {
+    if(pointIndices[i] != uint(-1) && pointDists[i] < maxDist)
+    {
+      maxDist = pointDists[i];
+      bestCoord = i;
+    }
+  }
+  
+  uint bestPointIndex = -1;
+  if(bestCoord != uint(-1))
+  {
+    bestPointIndex = pointIndices[bestCoord];
+    uint nextPointIndex = pointsListBuf.data[bestPointIndex].nextPointIndex;
+    pointIndices[bestCoord] = nextPointIndex;
+    pointDists[bestCoord] = (nextPointIndex == uint(-1)) ? 0.0f : pointsListBuf.data[nextPointIndex].dist;
+  }
+    
+  return bestPointIndex;
+}
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    /*bucketsBuf.data[bucketIndex].blockHeadPointIndex = bucketsBuf.data[bucketIndex].headPointIndex;
+      
+    for(uint pointIndex = bucketsBuf.data[bucketIndex].blockHeadPointIndex; pointIndex != uint(-1); pointIndex = pointsListBuf.data[pointIndex].nextPointIndex)
+    {
+      blockPointsListBuf.data[pointIndex].lists[0].nextPointIndex = pointsListBuf.data[pointIndex].nextPointIndex;
+      blockPointsListBuf.data[pointIndex].lists[1].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[2].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[3].nextPointIndex = uint(-1);
+    }*/
+    BucketBlockInfo bucketBlockInfo = GetBucketBlockInfo(bucketIndex);
+    
+    uvec4 pointIndices = uvec4(-1);
+    vec4 pointDists = vec4(1e7f);
+    for(uint pointNumber = 0; pointNumber < 4; pointNumber++)
+    {
+      uint bucketIndex = bucketBlockInfo.bucketIndices[pointNumber];
+      uint pointIndex = ((bucketIndex == uint(-1)) ? uint(-1) : bucketsBuf.data[bucketIndex].headPointIndex);
+      pointDists[pointNumber] = (pointIndex == uint(-1)) ? 0.0f : pointsListBuf.data[pointIndex].dist;
+      pointIndices[pointNumber] = pointIndex;
+    }
+    
+    uint currPointIndex = AdvanceLists(pointIndices, pointDists);
+    bucketsBuf.data[bucketIndex].blockHeadPointIndex = currPointIndex;
+    
+    uint nextPointIndex = uint(-1);
+    while(currPointIndex != uint(-1))
+    {
+      nextPointIndex = AdvanceLists(pointIndices, pointDists);
+      blockPointsListBuf.data[currPointIndex].lists[bucketBlockInfo.listNumber].nextPointIndex = nextPointIndex;
+      currPointIndex = nextPointIndex;
+    }
+  }
+}
+

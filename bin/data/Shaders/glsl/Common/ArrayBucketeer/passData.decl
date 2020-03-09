@@ -1,0 +1,15 @@
+layout(binding = 0, set = 0) uniform PassData
+{
+  mat4 viewMatrix; //world -> camera
+  mat4 projMatrix; //camera -> ndc
+  vec4 sortDir;
+  uint mipsCount;
+  uint totalBucketsCount;
+  uint bucketGroupsCount;
+  
+  uint maxSizePow;
+  uint blockSizePow;
+  uint isFirstBlock;
+  
+  float time;
+}passDataBuf;

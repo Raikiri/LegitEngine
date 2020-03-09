@@ -1,0 +1,74 @@
+{
+	"scene" :
+	{
+		"meshes" :
+		[
+			{
+				"name" : "hornbug",
+				"filename" : "../data/meshes/hornbug.obj",
+				"scale" : [1.0, 1.0, 1.0]
+			},
+			/*{
+				"name" : "bike",
+				"filename" : "data/meshes/bike.obj",
+				"scale" : [0.02, 0.02, 0.02]
+			},*/
+			
+			{
+				"name" : "sponza",
+				"filename" : "../data/meshes/crytek-sponza/sponza.obj",
+				"scale" : [0.01, 0.01, 0.01]
+			},
+			{
+				"name" : "marker",
+				"filename" : "../data/meshes/marker.obj",
+				"scale" : [0.1, 0.1, 0.1]
+			},
+			{
+				"name" : "dragon",
+				"filename" : "../data/meshes/dragon.obj",
+				"scale" : [0.1, 0.1, 0.1]
+			}
+		],
+		"objects" :
+		[
+			{
+				"mesh" : "hornbug",
+				"pos" : [-1.5, 0.0, 0.0],
+				"albedoColor" : [0.0, 0.5, 0.75],
+				"emissiveColor" : [0.0, 2.0, 3.0]
+			},
+			{
+				"mesh" : "hornbug",
+				"pos" : [1.5, 0.0, 0.0],
+				"albedoColor" : [0.95, 0.3, 0.1],
+				"emissiveColor" : [3.8, 1.2, 0.4]
+			},
+			{
+				"mesh" : "sponza",
+				"pos" : [0.0, 0.0, 0.0],
+				"albedoColor" : [1.0, 1.0, 1.0]
+			}/*,
+			{
+				"mesh" : "marker",
+				"pos" : [0.0, 1.5, 0.0],
+				"albedoColor" : [1.0, 1.0, 1.0],
+				"isShadowCaster" : false,
+				"isMarker" : true
+			}*/
+		]
+	},
+	"renderer" :
+	{
+		"shadowmapSize" : [1024, 1024],
+		"directLightColor" : [500.0, 500.0, 500.0],
+		"directLightPos" : [-2.8, 8.8, 0.5],
+		"directLightAngles" : [0.1, 0.0, 0.0],
+		"ambientLight" : [0.01, 0.01, 0.01], 
+		"screenspaceGI" :
+		{
+			"downscale" : 1,
+			"interleavedPatternSize" : 4
+		}
+	}
+}

@@ -1,0 +1,98 @@
+{
+	"scene" :
+	{
+		"meshes" :
+		[
+			{
+				"name" : "hornbug",
+				"filename" : "../data/meshes/hornbug.obj",
+				"scale" : [1.0, 1.0, 1.0]
+			},
+			{
+				"name" : "invertedCube",
+				"filename" : "../data/meshes/InvertedCube.obj",
+				"scale" : [3.0, 1.5, 3.0]
+			},
+			{
+				"name" : "cube",
+				"filename" : "../data/meshes/cube.obj",
+				"scale" : [0.5, 0.5, 0.5]
+			},
+			{
+				"name" : "marker",
+				"filename" : "../data/meshes/marker.obj",
+				"scale" : [0.1, 0.1, 0.1]
+			}
+			/*{
+				"name" : "obj1",
+				"filename" : "data/meshes/TestBall.obj",
+				"scale" : [0.1, 0.1, 0.1]
+			},*/
+			/*{
+				"name" : "obj2",
+				"filename" : "data/meshes/CubeTest_LP_8k.obj",
+				"scale" : [0.1, 0.1, 0.1]
+			}*/
+		],
+		"objects" :
+		[
+			/*{
+				"mesh" : "obj2",
+				"pos" : [-1.0, 1.0, 0.0],
+				"color" : [0.0, 0.5, 0.75]
+			},*/
+			{
+				"mesh" : "hornbug",
+				"pos" : [1.0, 0.0, 0.0],
+				"albedoColor" : [0.8, 0.8, 0.8]
+			},
+			{
+				"mesh" : "invertedCube",
+				"pos" : [0.0, 1.5, 0.0],
+				"albedoColor" : [1.0, 1.0, 1.0]
+			},
+			{
+				"mesh" : "cube",
+				"pos" : [-1.5, 0.25, 2.0],
+				//"albedoColor" : [0.95, 0.3, 0.1],
+				"emissiveColor" : [9.5, 3.0, 1.0]
+			},
+			{
+				"mesh" : "cube",
+				"pos" : [-1.5, 0.25, -2.0],
+				//"albedoColor" : [0.0, 0.5, 0.75],
+				"emissiveColor" : [0.0, 5.0, 7.6]
+			},
+			{
+				"mesh" : "cube",
+				"pos" : [1.5, 0.25, -2.0],
+				"albedoColor" : [0.95, 0.3, 0.1]
+			},
+			{
+				"mesh" : "cube",
+				"pos" : [1.5, 0.25, 2.0],
+				"albedoColor" : [0.0, 0.5, 0.75]
+			}/*,
+			{
+				"mesh" : "marker",
+				"pos" : [0.0, 1.5, 0.0],
+				"albedoColor" : [1.0, 1.0, 1.0],
+				"isShadowCaster" : false,
+				"isMarker" : true
+			}*/
+		]
+	},
+	"renderer" :
+	{
+		"shadowmapSize" : [1024, 1024],
+		"directLightColor" : [500.0, 500.0, 500.0],
+		"directLightPos" : [-2.8, 8.8, 0.5],
+		"directLightAngles" : [0.1, 0.0, 0.0],
+		"ambientLight" : [0.01, 0.01, 0.01], 
+		"screenspaceGI" :
+		{
+			"downscale" : 1,
+			"interleavedPatternSize" : 4
+		}
+	}
+}

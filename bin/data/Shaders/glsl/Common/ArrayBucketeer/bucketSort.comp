@@ -1,0 +1,105 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+#define WORKGROUP_SIZE 4
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "passData.decl"
+#include "../projection.decl"
+#include "bucketsData.decl"
+#include "../pointsData.decl"
+#include "bucketGroupsData.decl"
+
+bool Compare(uint startIndex, uint i, uint j, vec3 sortDir)
+{
+  //return dot(sortDir, pointsBuf.data[bucketEntriesPoolBuf.data[startIndex + i].pointIndex].worldPos.xyz - pointsBuf.data[bucketEntriesPoolBuf.data[startIndex + j].pointIndex].worldPos.xyz) < 0.0f;
+  return (bucketEntriesPoolBuf.data[startIndex + i].pointDist - bucketEntriesPoolBuf.data[startIndex + j].pointDist) < 0.0f;
+}
+
+void Swap(uint startIndex, uint i, uint j)
+{
+  BucketEntry t = bucketEntriesPoolBuf.data[startIndex + i];
+  bucketEntriesPoolBuf.data[startIndex + i] = bucketEntriesPoolBuf.data[startIndex + j];
+  bucketEntriesPoolBuf.data[startIndex + j] = t;
+}
+
+void BubbleSort(uint startIndex, uint count, vec3 sortDir)
+{
+  for(int i = 0; i < min(1000, int(count)); i++)
+  {
+    for(int j = int(count) - i - 2; j >= 0; j--)
+    {
+      if(Compare(startIndex, j, j + 1, sortDir))
+      {
+        Swap(startIndex, j, j + 1);
+      }
+    }
+  }
+}
+
+
+void SiftDown(uint startIndex, uint begin, uint end, vec3 sortDir)
+{
+  uint root = begin;
+
+  while (root * 2 + 1 < end)
+  {
+    uint child = root * 2 + 1;
+    if (child + 1 < end && Compare(startIndex, child, child + 1, sortDir))
+      child = child + 1;
+    if (Compare(startIndex, root, child, sortDir))
+    {
+      Swap(startIndex, root, child);
+      root = child;
+    }
+    else
+    {
+      return;
+    }
+  }
+}
+
+void Heapify(uint startIndex, uint count, vec3 sortDir)
+{
+  int begin = int(count > 1 ? ((count - 1) / 2) : 0);
+
+  while (begin >= 0)
+  {
+    SiftDown(startIndex, uint(begin), count, sortDir);
+    begin--;
+  }
+}
+
+void HeapSort(uint startIndex, uint count, vec3 sortDir)
+{
+  Heapify(startIndex, count, sortDir);
+
+  uint end = count;
+  int total = 0;
+  while (end > 1 && total < 10000)
+  {
+    total++;
+    Swap(startIndex, end - 1, 0);
+    end--;
+    SiftDown(startIndex, 0, end, sortDir);
+  }
+}
+
+
+void main() 
+{
+  mat4 viewProjMatrix = passDataBuf.projMatrix * passDataBuf.viewMatrix;
+  mat4 invViewProjMatrix = inverse(viewProjMatrix);
+  
+  vec3 rayOrigin = Unproject(vec3(0.5f, 0.5f, 0.0f), invViewProjMatrix);
+  vec3 rayEnd = Unproject(vec3(0.5f, 0.5f, 1.0f), invViewProjMatrix);
+  vec3 rayDir = normalize(rayEnd - rayOrigin);
+  
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    //bucketIndex = bucketIndexPool[bucketIndex];
+    //BubbleSort(bucketsBuf.data[bucketIndex].entryOffset, min(2000, bucketsBuf.data[bucketIndex].pointsCount), rayDir);
+    HeapSort(bucketsBuf.data[bucketIndex].entryOffset, bucketsBuf.data[bucketIndex].pointsCount, rayDir);
+  }
+}

@@ -1,0 +1,51 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../complex.decl"
+#include "transformAxis.decl"
+
+layout(binding = 0, set = 0) uniform ShaderDataBuffer
+{
+  ivec4 size;
+  ivec4 transformAxis;
+  float stepPhase;
+  int gap;
+} shaderDataBuf;
+
+uniform layout(binding = 1, rgba32f) image3D dataImage;
+
+//https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
+void main()
+{
+  int transformCoord = GetTransformCoord(ivec3(gl_GlobalInvocationID.xyz), shaderDataBuf.transformAxis.xyz);
+  ivec3 sideCoords = GetSideCoords(ivec3(gl_GlobalInvocationID.xyz), shaderDataBuf.transformAxis.xyz);
+  
+  int k = (transformCoord / (shaderDataBuf.gap / 2)) * shaderDataBuf.gap;
+  int j = transformCoord % (shaderDataBuf.gap / 2);
+  Complex mult = Polar(j * shaderDataBuf.stepPhase);
+/*
+  //Preprocess-version
+  Complex t = Mul(mult, data[k + j + gap / 2]);
+  Complex u = data[k + j];
+  data[k + j]           = u + t;
+  data[k + j + gap / 2] = u - t;*/
+
+  ivec3 tCoord = sideCoords + shaderDataBuf.transformAxis.xyz * (k + j + shaderDataBuf.gap / 2);
+  ivec3 uCoord = sideCoords + shaderDataBuf.transformAxis.xyz * (k + j);
+  WaveFunc t = Mul(mult, imageLoad(dataImage, tCoord));
+  WaveFunc u = imageLoad(dataImage, uCoord);
+  imageStore(dataImage, uCoord, u + t);
+  imageStore(dataImage, tCoord, u - t);
+  
+  //Postprocess-version
+  /*ivec3 tCoord = sideCoords + shaderDataBuf.transformAxis.xyz * (k + j + shaderDataBuf.gap / 2);
+  ivec3 uCoord = sideCoords + shaderDataBuf.transformAxis.xyz * (k + j);
+  WaveFunc t = imageLoad(dataImage, tCoord);
+  WaveFunc u = imageLoad(dataImage, uCoord);
+  imageStore(dataImage, uCoord, u + t);
+  imageStore(dataImage, tCoord, Mul(mult, u - t));*/
+}

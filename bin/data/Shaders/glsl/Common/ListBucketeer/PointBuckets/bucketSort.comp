@@ -1,0 +1,248 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "../passData.decl"
+#include "../../projection.decl"
+#include "../bucketsData.decl"
+#include "../pointsListData.decl"
+
+#define PointIndex uint
+#define null PointIndex(-1)
+
+uint GetListSize(PointIndex head)
+{
+  uint count = 0;
+  PointIndex curr = head;
+  while (curr != null)
+  {
+    count++;
+    curr = pointsListBuf.data[curr].nextPointIndex;
+  }
+  return count;
+}
+
+PointIndex GetListTail(PointIndex head)
+{
+  PointIndex tail = head;
+  PointIndex curr = head;
+  while (curr != null)
+  {
+    tail = curr;
+    curr = pointsListBuf.data[curr].nextPointIndex;
+  }
+  return tail;
+}
+
+PointIndex SortedInsert(PointIndex head, PointIndex newPoint, vec3 sortDir, inout uint err)
+{
+  err++;
+  if (head == null || pointsListBuf.data[head].dist - pointsListBuf.data[newPoint].dist >= 0.0f)
+  {
+    pointsListBuf.data[newPoint].nextPointIndex = head;
+    head = newPoint;
+  }
+  else
+  {
+    PointIndex curr = head;
+    for (; pointsListBuf.data[curr].nextPointIndex != null && (pointsListBuf.data[pointsListBuf.data[curr].nextPointIndex].dist - pointsListBuf.data[newPoint].dist) < 0.0f && err < 1000000; curr = pointsListBuf.data[curr].nextPointIndex)
+    {
+      err++;
+    }
+    pointsListBuf.data[newPoint].nextPointIndex = pointsListBuf.data[curr].nextPointIndex;
+    pointsListBuf.data[curr].nextPointIndex = newPoint;
+  }
+  return head;
+}
+
+PointIndex InsertionSort(PointIndex head, vec3 sortDir, inout uint err)
+{
+  PointIndex newHead = null;
+  PointIndex curr = head;
+  while (curr != null && err < 1000000)
+  {
+    PointIndex next = pointsListBuf.data[curr].nextPointIndex;
+    newHead = SortedInsert(newHead, curr, sortDir, err);
+    curr = next;
+  }
+  return newHead;
+}
+
+PointIndex BubbleSort(PointIndex head, vec3 sortDir)
+{
+  bool wasChanged;
+  do
+  {
+    PointIndex curr = head;
+    PointIndex prev = null;
+    PointIndex next = pointsListBuf.data[head].nextPointIndex;
+    wasChanged = false;
+    while (next != null) 
+    {
+      if (pointsListBuf.data[curr].dist - pointsListBuf.data[next].dist < 0.0f)
+      {
+        wasChanged = true;
+
+        if (prev != null)
+        {
+          PointIndex tmp = pointsListBuf.data[next].nextPointIndex;
+
+          pointsListBuf.data[prev].nextPointIndex = next;
+          pointsListBuf.data[next].nextPointIndex = curr;
+          pointsListBuf.data[curr].nextPointIndex = tmp;
+        }
+        else 
+        {
+          PointIndex tmp = pointsListBuf.data[next].nextPointIndex;
+
+          head = next;
+          pointsListBuf.data[next].nextPointIndex = curr;
+          pointsListBuf.data[curr].nextPointIndex = tmp;
+        }
+
+        prev = next;
+        next = pointsListBuf.data[curr].nextPointIndex;
+      }
+      else
+      {
+        prev = curr;
+        curr = next;
+        next = pointsListBuf.data[next].nextPointIndex;
+      }
+    }
+  } while (wasChanged);
+  return head;
+}
+
+
+struct MergeResult
+{
+  PointIndex head;
+  PointIndex tail;
+};
+
+MergeResult MergeLists(PointIndex leftHead, PointIndex rightHead, vec3 sortDir)
+{
+  PointIndex currLeft = leftHead;
+  PointIndex currRight = rightHead;
+  MergeResult res;
+  if (pointsListBuf.data[currLeft].dist - pointsListBuf.data[currRight].dist < 0.0f)
+  {
+    res.head = currLeft;
+    currLeft = pointsListBuf.data[currLeft].nextPointIndex;
+  }
+  else
+  {
+    res.head = currRight;
+    currRight = pointsListBuf.data[currRight].nextPointIndex;
+  }
+  PointIndex currMerged = res.head;
+  while (currLeft != null || currRight != null)
+  {
+    //itCount++; //~10000 iterations for random 1000-element array
+    if (currRight == null || (currLeft != null && pointsListBuf.data[currLeft].dist - pointsListBuf.data[currRight].dist < 0.0f))
+    {
+      pointsListBuf.data[currMerged].nextPointIndex = currLeft;
+      currMerged = currLeft;
+      currLeft = pointsListBuf.data[currLeft].nextPointIndex;
+    }
+    else
+    {
+      pointsListBuf.data[currMerged].nextPointIndex = currRight;
+      currMerged = currRight;
+      currRight = pointsListBuf.data[currRight].nextPointIndex;
+    }
+  }
+  pointsListBuf.data[currMerged].nextPointIndex = null;
+  res.tail = currMerged;
+  return res;
+}
+
+PointIndex SeparateList(PointIndex head, uint count)
+{
+  PointIndex curr = head;
+  for (uint i = 0; i < count - 1 && pointsListBuf.data[curr].nextPointIndex != null; i++)
+    curr = pointsListBuf.data[curr].nextPointIndex;
+  PointIndex nextHead = pointsListBuf.data[curr].nextPointIndex;
+  pointsListBuf.data[curr].nextPointIndex = null;
+  return nextHead;
+}
+
+PointIndex SortIntervals(PointIndex head, vec3 sortDir, uint gap)
+{
+  PointIndex lastTail = null;
+  PointIndex curr = head;
+  while (curr != null)
+  {
+    PointIndex sublistHead = curr;
+    PointIndex nextHead = SeparateList(curr, gap);
+    
+    uint err = 0;
+    sublistHead = InsertionSort(sublistHead, sortDir, err);
+    PointIndex sublistTail = GetListTail(sublistHead);
+
+    if (lastTail != null)
+      pointsListBuf.data[lastTail].nextPointIndex = sublistHead;
+    pointsListBuf.data[sublistTail].nextPointIndex = nextHead;
+    lastTail = sublistTail;
+    if (curr == head)
+      head = sublistHead;
+    curr = nextHead;
+  }
+  return head;
+}
+PointIndex MergeSort(PointIndex head, vec3 sortDir)
+{
+  uint count = GetListSize(head);
+  uint gap = 8;
+  head = SortIntervals(head, sortDir, gap);
+  
+  for (; gap < count; gap *= 2)
+  {
+    PointIndex lastTail = null;
+    PointIndex curr = head;
+    while (curr != null)
+    {
+      PointIndex leftHead = curr;
+      PointIndex rightHead = SeparateList(leftHead, gap);
+      if (rightHead == null)
+        break;
+
+      PointIndex nextHead = SeparateList(rightHead, gap);
+
+      MergeResult mergeResult = MergeLists(leftHead, rightHead, sortDir);
+      if (lastTail != null)
+        pointsListBuf.data[lastTail].nextPointIndex = mergeResult.head;
+      pointsListBuf.data[mergeResult.tail].nextPointIndex = nextHead;
+      lastTail = mergeResult.tail;
+      if (curr == head)
+        head = mergeResult.head;
+      curr = nextHead;
+    }
+  }
+  return head;
+}
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    //uint prev = atomicExchange(bucketData[bucketCoord.x + bucketCoord.y * size.x].pointsListBuf.dataCount, uint(-1));
+    //if(prev != uint(-1))
+    {
+      PointIndex head = bucketsBuf.data[bucketIndex].headPointIndex;
+      if(head != null)
+      {
+        head = MergeSort(head, passDataBuf.sortDir.xyz);
+        //uint err = 0;
+        //head = InsertionSort(head, passDataBuf.sortDir.xyz, err);
+        bucketsBuf.data[bucketIndex].headPointIndex = head;
+      }
+    }
+  }
+}

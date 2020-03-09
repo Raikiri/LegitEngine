@@ -1,0 +1,48 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../simulationData.decl" //binding 0 
+#include "../../../Common/complex.decl"
+
+uniform layout(binding = 1, rgba32f) image3D waveFuncImage;
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  
+  /*if(nodeIndex.x > simulationDataBuf.volumeResolution.x / 2) nodeIndex.x -= int(simulationDataBuf.volumeResolution.x);
+  if(nodeIndex.y > simulationDataBuf.volumeResolution.y / 2) nodeIndex.y -= int(simulationDataBuf.volumeResolution.y);
+  if(nodeIndex.z > simulationDataBuf.volumeResolution.z / 2) nodeIndex.z -= int(simulationDataBuf.volumeResolution.z);*/
+  
+  vec3 sqrStep = (simulationDataBuf.stepSize.xyz * simulationDataBuf.stepSize.xyz);
+  vec3 args = (pi * vec3(nodeIndex) / vec3(simulationDataBuf.volumeResolution.xyz));
+  vec3 sins = sin(args);
+  float lambda = dot(-vec3(4.0f) / sqrStep, sins * sins); //discrete
+  
+  /*vec3 volumeSize = simulationDataBuf.volumeMax.xyz - simulationDataBuf.volumeMin.xyz;
+  vec3 ratio = vec3(nodeIndex) / (volumeSize);
+  float lambda = -4.0f * pi * pi * (ratio.x * ratio.x + ratio.y * ratio.y + ratio.z * ratio.z); //continuous*/
+
+  WaveFunc waveFunc = imageLoad(waveFuncImage, nodeIndex);
+  
+  waveFunc = Mul(Polar(lambda * simulationDataBuf.timeStep * simulationDataBuf.h * 0.5f), waveFunc);
+  //waveFunc /= length(waveFunc); //not needed here
+
+  imageStore(waveFuncImage, nodeIndex, waveFunc);
+}
+
+
+/*d/dt (xk * e(i*2pi * k * n / N)) = 
+
+x = n / N * L
+
+d/dt (e(i*2pi * k x /L)) = ih/2 * d^2/dx^2 e(i*2pi * k x / L)
+d^2/dx^2 e(i*2pi * k x / L) = d/dx (i * 2pi * k/L * e()) = -4 pi * pi * k^2 / L^2 e()
+
+d/dt xk = xk * lambda * ih / 2
+
+xk = e^ip*/

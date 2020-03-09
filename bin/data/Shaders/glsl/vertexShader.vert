@@ -1,38 +1,39 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec4 inColor;
-layout(location = 2) in vec2 inUv;
+layout(location = 0) in vec3 attribPosition;
+layout(location = 1) in vec3 attribNormal;
+layout(location = 2) in vec2 attribUv;
 
+layout(binding = 0, set = 0) uniform FrameData
+{
+	float time;
+};
+
+layout(binding = 0, set = 1) uniform PassData
+{
+	mat4 projMatrix; //view->ndc
+	mat4 viewMatrix; //world->view
+};
+
+layout(binding = 0, set = 2) uniform DrawCallData
+{
+	mat4 modelMatrix; //object->world
+};
 
 out gl_PerVertex 
 {
 	vec4 gl_Position;
 };
 
-layout(location = 0) out vec4 vertColor;
-layout(location = 1) out vec2 vertUv;
+layout(location = 0) out vec3 vertWorldPos;
+layout(location = 1) out vec3 vertWorldNormal;
+layout(location = 2) out vec2 vertUv;
 
 void main()
 {
-	/*vec2 positions[3] = vec2[]
-	(
-		vec2(0.0, -0.5),
-		vec2(0.5, 0.5),
-		vec2(-0.5, 0.5)
-	);
-
-	vec4 colors[3] = vec4[]
-	(
-		vec4(1.0, 0.0, 0.0, 1.0),
-		vec4(0.0, 1.0, 0.0, 1.0),
-		vec4(0.0, 0.0, 1.0, 1.0)
-	);
-
-	gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
-	vertColor = colors[gl_VertexIndex];*/
-	gl_Position = vec4(inPosition, 1.0);
-	vertColor = inColor;
-	vertUv = inUv;
+	vertWorldPos    = (modelMatrix * vec4(attribPosition, 1.0f)).xyz;
+	vertWorldNormal = (modelMatrix * vec4(attribNormal,   0.0f)).xyz;
+	gl_Position = projMatrix * viewMatrix * vec4(vertWorldPos, 1.0f);
+	vertUv = attribUv;
 }

@@ -1,0 +1,22 @@
+
+vec3 Unproject(vec3 screenPos, mat4 inverseProjectionMatrix)
+{
+  vec4 viewPos = inverseProjectionMatrix * vec4((screenPos.xy * 2.0 - 1.0), screenPos.z, 1.0);
+  viewPos /= viewPos.w;
+  return viewPos.xyz;
+}
+
+vec3 UnprojectLinear(vec3 screenPos, mat4 inverseProjectionMatrix)
+{
+  vec3 point = Unproject(vec3(screenPos.xy, 1.0f), inverseProjectionMatrix);
+  return point / point.z * screenPos.z;
+}
+
+vec3 Project(vec3 viewPos, mat4 projectionMatrix)
+{
+  vec4 normalizedDevicePos = projectionMatrix * vec4(viewPos, 1.0);
+  normalizedDevicePos.xyz /= normalizedDevicePos.w;
+
+  vec3 screenPos = vec3(normalizedDevicePos.xy * 0.5 + vec2(0.5), normalizedDevicePos.z);
+  return screenPos;
+}

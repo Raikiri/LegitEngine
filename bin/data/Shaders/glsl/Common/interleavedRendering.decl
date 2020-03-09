@@ -1,0 +1,57 @@
+
+ivec2 InterleavePixel(ivec2 deinterleavedPixel, ivec2 viewportSize, ivec2 gridSize)
+{
+  ivec2 deinterleavedViewportSize = viewportSize.xy / gridSize;
+  ivec2 patternIndex = deinterleavedPixel / deinterleavedViewportSize;
+  return (deinterleavedPixel % deinterleavedViewportSize) * gridSize + patternIndex;
+}
+
+
+ivec2 DeinterleavePixel(ivec2 interleavedPixel, ivec2 viewportSize, ivec2 gridSize)
+{
+  ivec2 deinterleavedViewportSize = viewportSize.xy / gridSize;
+  ivec2 patternIndex = interleavedPixel % gridSize;
+  return patternIndex * deinterleavedViewportSize + interleavedPixel / gridSize;
+}
+
+struct CellInfo
+{
+  ivec2 patternIndex;
+  ivec2 gridSize;
+  ivec2 size;
+};
+
+CellInfo GetCellInfo(ivec2 viewportSize, ivec2 patternIndex, ivec2 gridSize)
+{
+  CellInfo cellInfo;
+  cellInfo.size = viewportSize / gridSize;
+  cellInfo.gridSize = gridSize;
+  cellInfo.patternIndex = patternIndex;
+  return cellInfo;
+}
+
+ivec2 GetDPixel(CellInfo cellInfo, ivec2 cellPixel)
+{
+  ivec2 dPixel = cellInfo.patternIndex * cellInfo.size + cellPixel;
+  return dPixel;
+}
+
+ivec2 GetIPixel(CellInfo cellInfo, ivec2 cellPixel)
+{
+  ivec2 iPixel = cellInfo.patternIndex + cellPixel * cellInfo.gridSize;
+  return iPixel;
+}
+
+vec2 GetDTexCoord(CellInfo cellInfo, vec2 screenCoord)
+{
+  return cellInfo.patternIndex * cellInfo.size + screenCoord / cellInfo.gridSize;
+}
+
+
+ivec2 GetPatternIndex(int linearPatternIndex, ivec2 patternSize)
+{
+  ivec2 patternIndex;
+  patternIndex.y = linearPatternIndex / patternSize.x;
+  patternIndex.x = linearPatternIndex % patternSize.x;
+  return patternIndex;
+}

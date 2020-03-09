@@ -1,0 +1,67 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../complex.decl"
+#include "transformAxis.decl"
+
+layout(binding = 0, set = 0) uniform ShaderDataBuffer
+{
+  ivec4 sizePow;
+  ivec4 transformAxis;
+  float ampMult;
+} shaderDataBuf;
+
+uniform layout(binding = 1, rgba32f) image3D dataImage;
+
+uint BitReverse(uint x)
+{
+  x = (((x & 0xaaaaaaaau) >> 1) | ((x & 0x55555555u) << 1));
+  x = (((x & 0xccccccccu) >> 2) | ((x & 0x33333333u) << 2));
+  x = (((x & 0xf0f0f0f0u) >> 4) | ((x & 0x0f0f0f0fu) << 4));
+  x = (((x & 0xff00ff00u) >> 8) | ((x & 0x00ff00ffu) << 8));
+  return((x >> 16) | (x << 16));
+}
+
+uint BitReverse2(uint x, uint sizePow)
+{
+  uint res;
+  for (uint i = 0; i < sizePow; i++)
+    if ((x & (1 << i)) != 0) res += (1 << (sizePow - 1 - i));
+  return res;
+}
+
+float ShiftMult(ivec3 coord)
+{
+  return (((coord.x + coord.y + coord.z) % 2) == 0) ? 1.0f : -1.0f;
+}
+void main()
+{
+  ivec3 dstIndex = ivec3(gl_GlobalInvocationID.xyz);
+  /*WaveFunc srcWaveFunc = imageLoad(dataImage, dstIndex) * shaderDataBuf.ampMult;
+  imageStore(dataImage, dstIndex, srcWaveFunc);*/
+  
+  int dstTransformCoord = GetTransformCoord(dstIndex, shaderDataBuf.transformAxis.xyz);
+  ivec3 sideCoords = GetSideCoords(dstIndex, shaderDataBuf.transformAxis.xyz);
+
+  int transformSizePow = GetTransformCoord(shaderDataBuf.sizePow.xyz, shaderDataBuf.transformAxis.xyz);
+  int srcTransformCoord = int(BitReverse(uint(dstTransformCoord)) >> uint(32 - transformSizePow));
+  //int srcTransformCoord = BitReverse2(dstTransformCoord, transformSizePow);
+  ivec3 srcIndex = sideCoords + shaderDataBuf.transformAxis.xyz * srcTransformCoord;
+
+  if(dstTransformCoord < srcTransformCoord)
+  {
+    WaveFunc srcWaveFunc = imageLoad(dataImage, srcIndex) * shaderDataBuf.ampMult;// * ShiftMult(dstIndex);
+    WaveFunc dstWaveFunc = imageLoad(dataImage, dstIndex) * shaderDataBuf.ampMult;// * ShiftMult(srcIndex);
+    imageStore(dataImage, srcIndex, dstWaveFunc);
+    imageStore(dataImage, dstIndex, srcWaveFunc);
+  }
+  if(dstTransformCoord == srcTransformCoord)
+  {
+    WaveFunc dstWaveFunc = imageLoad(dataImage, dstIndex) * shaderDataBuf.ampMult;// * ShiftMult(dstIndex);
+    imageStore(dataImage, dstIndex, dstWaveFunc);
+  }
+}

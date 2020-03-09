@@ -1,0 +1,86 @@
+#define Complex vec2
+#define WaveFunc vec4
+#define pi 3.1415926
+
+Complex Polar(float theta)
+{
+  return Complex(cos(theta), sin(theta));
+}
+
+Complex Conjugate(Complex c)
+{
+  return Complex(c.x, -c.y);
+}
+
+float Re(Complex c)
+{
+  return c.x;
+}
+
+Complex Mul(Complex a, Complex b)
+{
+  return Complex(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+Complex MulI(Complex a)
+{
+  return Complex(-a.y, a.x);
+}
+Complex WavePhase(vec3 waveVec, vec3 pos, float time, float h)
+{
+  float phase = dot(waveVec, pos) - h / 2.0f * dot(waveVec, waveVec) * time;
+  return Polar(phase + 3.1415f);
+}
+
+WaveFunc Conjugate(WaveFunc waveFunc)
+{
+  return WaveFunc(Conjugate(waveFunc.xy), Conjugate(waveFunc.zw));
+}
+
+WaveFunc MulI(WaveFunc waveFunc)
+{
+  return WaveFunc(MulI(waveFunc.xy), MulI(waveFunc.zw));
+}
+
+WaveFunc Mul(Complex c, WaveFunc waveFunc)
+{
+  return WaveFunc(Mul(c, waveFunc.xy), Mul(c, waveFunc.zw));
+}
+
+Complex Dot(WaveFunc a, WaveFunc b)
+{
+  return Mul(a.xy, b.xy) + Mul(a.zw, b.zw);
+}
+
+float Arg(Complex c)
+{
+  return atan(c.y, c.x);
+}
+
+
+ivec3 Permute(ivec3 srcVec, ivec3 permutation)
+{
+  return ivec3(srcVec[permutation.x], srcVec[permutation.y], srcVec[permutation.z]);
+}
+
+ivec3 InvPermutation(ivec3 permutation)
+{
+  ivec3 res;
+  res[permutation.x] = 0;
+  res[permutation.y] = 1;
+  res[permutation.z] = 2;
+  return res;
+}
+
+ivec3 GetVolumeIndex(int i, ivec3 size)
+{
+  return ivec3(
+    i % size.x,
+    (i % (size.x * size.y)) / size.x,
+    i / (size.x * size.y));
+}
+
+int GetLinearIndex(ivec3 i, ivec3 size)
+{
+  return i.x + i.y * size.x + i.z * size.x * size.y;
+}

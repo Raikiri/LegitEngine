@@ -1,0 +1,103 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+layout(binding = 0, set = 0) uniform PassDataBuffer
+{
+  mat4 viewMatrix; //world -> camera
+  mat4 projMatrix; //camera -> ndc
+  vec4 viewportSize;
+  float time;
+  uint totalBucketsCount;
+} passDataBuf;
+
+#include "../Common/projection.decl"
+#include "../Common/ListBucketeer/bucketsData.decl"
+#include "../Common/ListBucketeer/pointsListData.decl"
+//#include "../Common/ListBucketeer/blockPointsListData.decl"
+#include "../Common/pointsData.decl"
+
+
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  vec3 viewDir = (inverse(passDataBuf.viewMatrix) * vec4(0.0f, 0.0f, 1.0f, 0.0f)).xyz;
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    /*bucketsBuf.data[bucketIndex].blockHeadPointIndex = bucketsBuf.data[bucketIndex].headPointIndex;
+      
+    for(uint pointIndex = bucketsBuf.data[bucketIndex].blockHeadPointIndex; pointIndex != uint(-1); pointIndex = pointsListBuf.data[pointIndex].nextPointIndex)
+    {
+      blockPointsListBuf.data[pointIndex].lists[0].nextPointIndex = pointsListBuf.data[pointIndex].nextPointIndex;
+      blockPointsListBuf.data[pointIndex].lists[1].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[2].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[3].nextPointIndex = uint(-1);
+    }*/
+    BucketLocation bucketLocation = GetBucketLocation(bucketIndex);
+    mat4 invViewProjMatrix = inverse(passDataBuf.projMatrix * passDataBuf.viewMatrix);
+    vec2 screenCoord = (vec2(bucketLocation.localCoord) + vec2(0.5f)) / vec2(mipInfosBuf.data[bucketLocation.mipLevel].size.xy);
+    vec3 lightDir = normalize(
+      Unproject(vec3(screenCoord, 1.0f), invViewProjMatrix) -
+      Unproject(vec3(screenCoord, 0.0f), invViewProjMatrix));
+
+
+    float splatOcclusion = 0.1f;
+    
+    float bucketRemainingLight = 1.0f;
+    ivec2 testLocalCoord = bucketLocation.localCoord;
+    for(uint mipLevel = bucketLocation.mipLevel + 1; mipLevel < 5; mipLevel++)
+    {
+      testLocalCoord >> 1;
+      uint testBucketIndex = GetBucketIndexSafe(testLocalCoord, mipLevel);
+      if(testBucketIndex != uint(-1))
+        bucketRemainingLight *= pow(splatOcclusion, bucketsBuf.data[testBucketIndex].pointsCount);
+    }
+    
+    bool isFirst = true;
+    float lastDist = 0.0f;
+    vec3 lastNorm = viewDir;
+    bucketRemainingLight = 1.0f;
+    
+    uint mipsCount = mipInfosBuf.data.length();
+
+    for(int mipNumber = 0; mipNumber < mipsCount; mipNumber++)
+    {
+      uint currMipLevel = mipsCount - 1 - mipNumber;
+
+      ivec2 currBucketCoord = bucketLocation.localCoord >> (currMipLevel - bucketLocation.mipLevel);
+      uint currBucketIndex = GetBucketIndexSafe(currBucketCoord, currMipLevel);
+
+      uint currPointIndex = bucketsBuf.data[currBucketIndex].headPointIndex;
+      while(currPointIndex != uint(-1) && bucketRemainingLight > 0.01f)
+      {
+        float currDist = dot(pointsBuf.data[currPointIndex].worldPos.xyz, viewDir);
+        vec3 currNorm = pointsBuf.data[currPointIndex].worldNormal.xyz;
+        if(isFirst)
+        {
+          lastDist = currDist;
+        }
+        isFirst = false;
+        float deltaDist = currDist - lastDist;
+        float eps = 1e-3f;
+        if(dot(currNorm, viewDir) < eps && dot(lastNorm, viewDir) > -eps)
+        {
+          bucketRemainingLight *= exp(-deltaDist * 100.0f);
+        }
+
+        lastDist = currDist;
+        lastNorm = currNorm;
+        if(currMipLevel == bucketLocation.mipLevel)
+          pointsBuf.data[currPointIndex].directLight.rgb += vec3(1.9f) * bucketRemainingLight * max(0.0f, -dot(currNorm, lightDir)) * 0.0f;
+        //bucketRemainingLight *= splatOcclusion;
+        currPointIndex = pointsListBuf.data[currPointIndex].nextPointIndex;
+      }
+      if(currMipLevel == bucketLocation.mipLevel)
+        return;
+    }
+  }
+}
+

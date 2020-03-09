@@ -1,0 +1,41 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../SimulationData.decl" //binding 0 
+
+layout(binding = 1, r32f) uniform image3D pressureImage;
+layout(binding = 2, r32f) uniform image3D divergenceImage;
+
+float ComputeNewPressure(ivec3 nodeIndex)
+{
+  vec3 stepSize = simulationDataBuf.stepSize.xyz;
+  float newPressure = (
+    imageLoad(pressureImage, ClampNode(nodeIndex + ivec3(-1, 0, 0))).x +
+    imageLoad(pressureImage, ClampNode(nodeIndex + ivec3( 1, 0, 0))).x +
+    imageLoad(pressureImage, ClampNode(nodeIndex + ivec3(0, -1, 0))).x +
+    imageLoad(pressureImage, ClampNode(nodeIndex + ivec3(0,  1, 0))).x +
+    imageLoad(pressureImage, ClampNode(nodeIndex + ivec3(0, 0, -1))).x +
+    imageLoad(pressureImage, ClampNode(nodeIndex + ivec3(0, 0,  1))).x -
+    stepSize.x * stepSize.x * imageLoad(divergenceImage, nodeIndex).x) / 6.0f;
+  return newPressure;
+}
+
+ivec3 GetCheckerboardNodeIndex(ivec3 cellIndex, int phase)
+{
+  ivec3 res;
+  res.x = (cellIndex.x * 2) + ((cellIndex.y + cellIndex.z + phase) % 2);
+  res.y = cellIndex.y;
+  res.z = cellIndex.z;
+  return res;
+}
+void main() 
+{
+  ivec3 cellIndex = ivec3(gl_GlobalInvocationID.xyz);
+  ivec3 nodeIndex = GetCheckerboardNodeIndex(cellIndex, simulationDataBuf.iterationIndex);
+  imageStore(pressureImage, nodeIndex, vec4(ComputeNewPressure(nodeIndex), 0.0f, 0.0f, 0.0f));
+}
+

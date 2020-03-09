@@ -1,0 +1,6 @@
+float ComputeHorizonContribution(vec3 eyeDir, vec3 eyeTangent, vec3 viewNorm, float minAngle, float maxAngle)
+{
+  return
+    +0.25 * dot(eyeDir, viewNorm) * (- cos(2.0 * maxAngle) + cos(2.0 * minAngle))
+    +0.25 * dot(eyeTangent, viewNorm) * (2.0 * maxAngle - 2.0 * minAngle - sin(2.0 * maxAngle) + sin(2.0 * minAngle));
+}

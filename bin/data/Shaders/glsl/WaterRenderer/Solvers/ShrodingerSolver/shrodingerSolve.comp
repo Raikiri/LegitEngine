@@ -1,0 +1,38 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../simulationData.decl" //binding 0 
+#include "../../../Common/complex.decl"
+
+uniform layout(binding = 1, rgba32f) image3D waveFuncImage;
+
+WaveFunc ComputeWaveFuncLaplacian(ivec3 nodeIndex)
+{
+  vec3 invStepSize = simulationDataBuf.invStepSize.xyz;
+
+  return WaveFunc(
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(-1, 0, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 1, 0, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, -1, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0,  1, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0, -1))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0,  1))) -
+    imageLoad(waveFuncImage, ClampNode(nodeIndex)) * 6.0f) * invStepSize.x * invStepSize.x;
+}
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  
+  WaveFunc derivative = MulI(ComputeWaveFuncLaplacian(nodeIndex)) * 0.5f * simulationDataBuf.h;
+  WaveFunc waveFunc = imageLoad(waveFuncImage, nodeIndex);
+  
+  waveFunc += derivative * simulationDataBuf.timeStep;
+  waveFunc /= length(waveFunc);
+
+  imageStore(waveFuncImage, nodeIndex, waveFunc);
+}

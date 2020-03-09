@@ -1,0 +1,24 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../simulationData.decl" //binding 0 
+#include "../../../Common/complex.decl"
+
+uniform layout(binding = 1, rgba32f) image3D waveFuncImage;
+uniform layout(binding = 2, r32f) image3D pressureImage;
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  
+  vec4 waveFunc = imageLoad(waveFuncImage, nodeIndex);
+  float pressure = imageLoad(pressureImage, nodeIndex).x;
+  Complex phaseShift = Polar(-pressure / simulationDataBuf.h);
+  waveFunc = Mul(phaseShift, waveFunc);
+  
+  imageStore(waveFuncImage, nodeIndex, waveFunc);
+}

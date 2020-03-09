@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{A92804A4-B31F-47AF-A9C5-48E48630DED5}</ProjectGuid>
+    <RootNamespace>LegitProject</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)\..\bin\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\..\build\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>d:\Portable soft\VulkanSDK\1.1.121.2\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>d:\Portable soft\VulkanSDK\1.1.121.2\Lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <TargetName>LegitEngineDebug</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(SolutionDir)\..\build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)\..\bin\$(Platform)\</OutDir>
+    <IncludePath>d:\Portable soft\VulkanSDK\1.1.121.2\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>d:\Portable soft\VulkanSDK\1.1.121.2\Lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <TargetName>LegitEngine</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\dependencies\imgui;$(SolutionDir)\..\dependencies\spirv-cross;$(SolutionDir)\..\dependencies\tiny_obj_loader\include;$(SolutionDir)\..\dependencies\glm\include;$(SolutionDir)\..\dependencies\jsoncpp\;$(SolutionDir)\..\dependencies\glfw\include;$(SolutionDir)\..\dependencies\gli</AdditionalIncludeDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\dependencies\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\dependencies\imgui;$(SolutionDir)\..\dependencies\spirv-cross;$(SolutionDir)\..\dependencies\tiny_obj_loader\include;$(SolutionDir)\..\dependencies\glm\include;$(SolutionDir)\..\dependencies\jsoncpp\;$(SolutionDir)\..\dependencies\glfw\include;$(SolutionDir)\..\dependencies\gli</AdditionalIncludeDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\dependencies\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\dependencies\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\dependencies\jsoncpp\jsoncpp.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cfg.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cpp.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cross.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cross_parsed_ir.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cross_util.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_glsl.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_hlsl.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_msl.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_parser.cpp" />
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_reflect.cpp" />
+    <ClCompile Include="..\..\dependencies\tiny_obj_loader\include\tiny_obj_loader.cc" />
+    <ClCompile Include="..\..\src\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\dependencies\imgui\imconfig.h" />
+    <ClInclude Include="..\..\dependencies\imgui\imgui.h" />
+    <ClInclude Include="..\..\dependencies\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\dependencies\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\dependencies\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\..\dependencies\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\GLSL.std.450.h" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cfg.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_common.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cpp.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cross.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cross_parsed_ir.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cross_util.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_glsl.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_hlsl.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_msl.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_parser.hpp" />
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_reflect.hpp" />
+    <ClInclude Include="..\..\src\ImGuiUtils\ImGuiProfilerRenderer.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Buffer.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Core.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\CpuProfiler.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\DescriptorSetCache.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Framebuffer.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\GpuProfiler.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Handles.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Image.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\ImageLoader.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\ImageView.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\LegitVulkan.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Pipeline.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\PipelineCache.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Pool.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\PresentQueue.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\ProfilerTask.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\QueueIndices.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\RenderGraph.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\RenderPass.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\RenderPassCache.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Sampler.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\ShaderMemoryPool.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\ShaderModule.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\ShaderProgram.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\StagedResources.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Surface.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\Swapchain.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\TimestampQuery.h" />
+    <ClInclude Include="..\..\src\LegitVulkan\VertexDeclaration.h" />
+    <ClInclude Include="..\..\src\Render\Common\ArrayBucketeer.h" />
+    <ClInclude Include="..\..\src\Render\Common\BlurBuilder.h" />
+    <ClInclude Include="..\..\src\Render\Common\DebugRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Common\FFT\FFTRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Common\ImGuiRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Common\InterleaveBuilder.h" />
+    <ClInclude Include="..\..\src\Render\Common\ListBucketeer.h" />
+    <ClInclude Include="..\..\src\Render\Common\MipBuilder.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\FastVolumeRenderer\FastVolumeRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\LSGIRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\PointRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\SSCTGIRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\SSShiftGIRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\SSVCTGIRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\SSVGIRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\VolumeRenderer.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\VolumeRendering\Preintegrator.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\VolumeRendering\VolumeObject.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\WaterRenderer\ShrodingerSolver.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\WaterRenderer\SimpleSolver.h" />
+    <ClInclude Include="..\..\src\Render\Renderers\WaterRenderer\WaterParticleRenderer.h" />
+    <ClInclude Include="..\..\src\Scene\Mesh.h" />
+    <ClInclude Include="..\..\src\Scene\PointMesh.h" />
+    <ClInclude Include="..\..\src\Scene\Scene.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

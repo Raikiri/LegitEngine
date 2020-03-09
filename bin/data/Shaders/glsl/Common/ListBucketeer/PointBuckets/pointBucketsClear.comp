@@ -1,0 +1,23 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+#define WORKGROUP_SIZE 128
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "../passData.decl"
+#include "../../projection.decl"
+#include "../bucketsData.decl"
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    bucketsBuf.data[bucketIndex].headPointIndex = uint(-1);
+    bucketsBuf.data[bucketIndex].pointsCount = 0;
+  }
+  if(bucketIndex == 0)
+  {
+    mipInfosBuf.data[0].debug = 0.0f;
+  }
+}

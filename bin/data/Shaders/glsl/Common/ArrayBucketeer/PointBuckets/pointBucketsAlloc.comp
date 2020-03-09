@@ -1,0 +1,40 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+#define WORKGROUP_SIZE 128
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+#include "../passData.decl"
+#include "../../projection.decl"
+#include "../bucketsData.decl"
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    if(bucketsBuf.data[bucketIndex].pointsCount > 0)
+    {
+      bucketsBuf.data[bucketIndex].entryOffset = atomicAdd(mipInfosBuf.data[0].indexPoolDataOffset, bucketsBuf.data[bucketIndex].pointsCount + 1);
+      uint endEntryIndex = bucketsBuf.data[bucketIndex].entryOffset + bucketsBuf.data[bucketIndex].pointsCount;
+      bucketEntriesPoolBuf.data[endEntryIndex].pointIndex = uint(-1);
+      bucketEntriesPoolBuf.data[endEntryIndex].pointDist = 1e7f;
+      //bucketEntriesPoolBuf.data[endEntryIndex].bucketIndex = bucketIndex;
+    }else
+    {
+      bucketsBuf.data[bucketIndex].entryOffset = uint(-1);
+    }
+    bucketsBuf.data[bucketIndex].pointsCount = 0;
+  }
+  
+  /*if(uint(gl_GlobalInvocationID.x) == 0)
+  {
+    uint globalOffset = 0;
+    for(uint bucketIndex = 0; bucketIndex < totalBucketsCount; bucketIndex++)
+    {
+      bucketsBuf.data[bucketIndex].entryOffset = globalOffset;
+      globalOffset += bucketsBuf.data[bucketIndex].pointsCount;
+      bucketsBuf.data[bucketIndex].pointsCount = 0;
+    }
+  }*/
+}

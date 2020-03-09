@@ -1,0 +1,4 @@
+float GetCheckerboard(vec2 coord)
+{
+  return (((fract(coord.x) > 0.5f ? 1 : 0) + (fract(coord.y) > 0.5f ? 1 : 0)) % 2) == 0 ? 0.0f : 1.0f;
+}

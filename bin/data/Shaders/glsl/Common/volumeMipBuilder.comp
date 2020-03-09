@@ -1,0 +1,40 @@
+#version 450
+
+#define WORKGROUP_SIZE 4
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+layout(binding = 0, set = 0) uniform ShaderDataBuffer
+{
+  uvec4 dstMipSize;
+} shaderDataBuf;
+
+uniform layout(binding = 1, rgba8) image3D srcMipImage;
+uniform layout(binding = 2, rgba8) image3D dstMipImage;
+
+void main() 
+{
+  ivec3 dstCoord = ivec3(gl_GlobalInvocationID.xyz);
+
+  if(all(lessThan(dstCoord, shaderDataBuf.dstMipSize.xyz)))
+  {
+    vec4 sumColor = vec4(0.0f);
+    float sumWeight = 0.0f;
+    ivec3 offset;
+    for(offset.z = 0; offset.z < 2; offset.z++)
+    {
+      for(offset.y = 0; offset.y < 2; offset.y++)
+      {
+        for(offset.x = 0; offset.x < 2; offset.x++)
+        {
+          ivec3 srcCoord = dstCoord * 2 + offset;
+          sumColor += imageLoad(srcMipImage, srcCoord);
+          sumWeight += 1.0f;
+        }
+      }
+    }
+    imageStore(dstMipImage, dstCoord, sumColor / sumWeight);
+  }
+}

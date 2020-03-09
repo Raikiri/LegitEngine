@@ -1,0 +1,87 @@
+struct MipInfo
+{
+  ivec4 size;
+  uint bucketIndexOffset;
+  uint indexPoolDataOffset;
+  float padding[2];
+};
+
+layout(std430, binding = 2, set = 0) buffer MipInfosBuffer
+{
+  MipInfo data[];
+} mipInfosBuf;
+
+struct Bucket
+{
+  uint entryOffset;
+  uint pointsCount;
+};
+
+layout(std430, binding = 3, set = 0) buffer BucketsBuffer
+{
+  Bucket data[];
+} bucketsBuf;
+
+uint GetBucketIndex(vec2 screenCoord, uint mipLevel)
+{
+  ivec2 mipSize = mipInfosBuf.data[mipLevel].size.xy;
+  ivec2 bucketCoord = min(mipSize - ivec2(1), max(ivec2(0), ivec2(mipSize * screenCoord)));
+  return mipInfosBuf.data[mipLevel].bucketIndexOffset + bucketCoord.x + bucketCoord.y * mipSize.x;
+}
+
+uint GetBucketIndexSafe(ivec2 bucketCoord, uint mipLevel)
+{
+  ivec2 mipSize = mipInfosBuf.data[mipLevel].size.xy;
+  return 
+    (bucketCoord.x >= 0 && bucketCoord.y >= 0 && bucketCoord.x < mipSize.x && bucketCoord.y < mipSize.y) ? 
+    (mipInfosBuf.data[mipLevel].bucketIndexOffset + bucketCoord.x + bucketCoord.y * mipSize.x) : uint(-1);
+}
+
+uvec4 GetBucketBlockIndices(vec2 screenCoord, uint mipLevel, vec2 texelOffset)
+{
+  ivec2 mipSize = mipInfosBuf.data[mipLevel].size.xy;
+  ivec2 cornerCoord = ivec2(floor(mipSize * screenCoord + texelOffset));
+  return uvec4(
+    GetBucketIndexSafe(cornerCoord + ivec2(0, 0), mipLevel),
+    GetBucketIndexSafe(cornerCoord + ivec2(1, 0), mipLevel),
+    GetBucketIndexSafe(cornerCoord + ivec2(1, 1), mipLevel),
+    GetBucketIndexSafe(cornerCoord + ivec2(0, 1), mipLevel));
+}
+
+vec2 GetPointProjSize(vec3 pos, float radius, mat4 projMatrix, mat4 invProjMatrix)
+{
+  vec3 screenPos = Project(pos, projMatrix);
+  float eps = 1e-2f;
+  vec2 derivatives = vec2(
+    length(Unproject(screenPos + vec3(eps, 0.0f, 0.0f), invProjMatrix) - pos),
+    length(Unproject(screenPos + vec3(0.0f, eps, 0.0f), invProjMatrix) - pos)) / eps;
+  return vec2(radius / (derivatives.x + 1e-7f), radius / (derivatives.y + 1e-7f));
+}
+
+uvec4 GetPointBucketBlockIndices(vec2 screenPixelCoord, vec3 worldPos, float worldRadius)
+{
+  vec2 viewportSize = vec2(mipInfosBuf.data[0].size.xy);
+  vec2 screenCoord = screenPixelCoord / viewportSize;
+  
+  mat4 viewProjMatrix = passDataBuf.projMatrix * passDataBuf.viewMatrix;
+  mat4 invViewProjMatrix = inverse(viewProjMatrix);
+  
+  vec2 pixelRadius2 = mipInfosBuf.data[0].size.xy * GetPointProjSize(worldPos, worldRadius, viewProjMatrix, invViewProjMatrix);
+  float maxPixelRadius = max(pixelRadius2.x, pixelRadius2.y) + 1e-7f;
+  
+  uint mipsCount = mipInfosBuf.data.length();
+  float mipLevel = min(max(0.0f, log2(maxPixelRadius)), mipsCount - 1);
+  
+  return GetBucketBlockIndices(screenCoord, int(mipLevel + 0.5f), vec2(0.0f));
+}
+
+struct BucketEntry
+{
+  uint pointIndex;
+  float pointDist;
+  //uint bucketIndex;
+};
+layout(std430, binding = 4, set = 0) buffer BucketEntriesPoolBuffer
+{
+  BucketEntry data[];
+}bucketEntriesPoolBuf;

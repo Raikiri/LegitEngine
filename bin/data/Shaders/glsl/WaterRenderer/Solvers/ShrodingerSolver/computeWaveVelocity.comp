@@ -1,0 +1,106 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../simulationData.decl" //binding 0 
+#include "../../../Common/complex.decl"
+
+uniform layout(binding = 1, rgba32f) image3D waveFuncImage;
+uniform layout(binding = 2, rgba32f) image3D velocityImage;
+
+struct WaveFuncGradient
+{
+  WaveFunc coordGradients[3];
+};
+
+WaveFunc RefWorldWaveFunc(vec3 worldPos)
+{
+  vec3 volumeSize = simulationDataBuf.volumeMax.xyz - simulationDataBuf.volumeMin.xyz;
+  
+  vec3 dstVelocity = vec3( 0.05f * volumeSize.x, 0.0f, 0.0f);
+  Complex wavePhase = WavePhase(dstVelocity / simulationDataBuf.h, worldPos, 0.0f, simulationDataBuf.h);
+  return WaveFunc(wavePhase, Complex(0.0f, 0.0f));
+}
+
+WaveFunc RefWaveFunc(ivec3 nodeIndex)
+{
+  vec3 normPos = (vec3(nodeIndex) + vec3(0.5f)) / vec3(simulationDataBuf.volumeResolution.xyz);
+  vec3 worldPos = GetWorldVolumePoint(normPos);
+  return RefWorldWaveFunc(worldPos);
+}
+
+WaveFuncGradient ComputeWaveFuncGradient(ivec3 nodeIndex)
+{
+  vec3 invStepSize = simulationDataBuf.invStepSize.xyz;
+  WaveFuncGradient res;
+  res.coordGradients[0] = (imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(1, 0, 0))) - imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(-1, 0, 0)))) * 0.5f * invStepSize.x;
+  res.coordGradients[1] = (imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 1, 0))) - imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, -1, 0)))) * 0.5f * invStepSize.y;
+  res.coordGradients[2] = (imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0, 1))) - imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0, -1)))) * 0.5f * invStepSize.z;
+  return res;
+}
+
+struct ComplexVector
+{
+  Complex coords[3];
+};
+
+ComplexVector MulGrad(WaveFunc waveFunc, WaveFuncGradient gradient)
+{
+  ComplexVector res;
+  res.coords[0] = Dot(waveFunc, gradient.coordGradients[0]);
+  res.coords[1] = Dot(waveFunc, gradient.coordGradients[1]);
+  res.coords[2] = Dot(waveFunc, gradient.coordGradients[2]);
+  return res;
+}
+
+vec3 Re(ComplexVector complexVec)
+{
+  return vec3(complexVec.coords[0].x, complexVec.coords[1].x, complexVec.coords[2].x);
+}
+//c * (a + bi) * (d * ei) = c * (ad - be) 
+
+vec3 ComputeVelocity(ivec3 nodeIndex)
+{
+  WaveFuncGradient gradient = ComputeWaveFuncGradient(nodeIndex);
+  
+  WaveFunc waveFunc = imageLoad(waveFuncImage, ClampNode(nodeIndex));
+  WaveFunc mult = MulI(Conjugate(waveFunc));
+  return -simulationDataBuf.h * Re(MulGrad(mult, gradient));
+}
+
+float MinArg(float arg)
+{
+  if(arg > pi)
+    return arg - pi;
+  if(arg < -pi)
+    return arg + pi;
+  return arg;
+}
+
+vec3 ComputeVelocityArg(ivec3 nodeIndex)
+{
+  WaveFunc waveFunc = imageLoad(waveFuncImage, ClampNode(nodeIndex));
+  vec3 edgeFluxes;
+  edgeFluxes.x = Arg(0.5f*(
+    Dot(Conjugate(waveFunc),          imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 1, 0, 0)))) +
+    Dot(          waveFunc, Conjugate(imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(-1, 0, 0))))))) ;
+  edgeFluxes.y = Arg(0.5f*(
+    Dot(Conjugate(waveFunc),          imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 0,  1, 0)))) +
+    Dot(          waveFunc, Conjugate(imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 0, -1, 0))))))) ;
+  edgeFluxes.z = Arg(0.5f*(
+    Dot(Conjugate(waveFunc),          imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 0, 0,  1)))) +
+    Dot(          waveFunc, Conjugate(imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 0, 0, -1))))))) ;
+  return simulationDataBuf.h * edgeFluxes * simulationDataBuf.invStepSize.xyz;
+}
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  
+  //vec3 velocity = ComputeVelocity(nodeIndex);
+  vec3 velocity = ComputeVelocityArg(nodeIndex);
+  imageStore(velocityImage, nodeIndex, vec4(velocity, 0.0f));
+}

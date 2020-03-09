@@ -1,58 +1,319 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="spirv-cross">
+      <UniqueIdentifier>{ad9dea2d-2f83-466a-a2dd-1a255eb4dd2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tiny_obj_loader">
+      <UniqueIdentifier>{d3f5f4e9-df57-4646-a521-13d056a5f117}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="jsoncpp">
+      <UniqueIdentifier>{910655ba-5851-440f-b011-f68f952121b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{2448733e-bf22-4b81-90d4-eead128e5401}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="LegitVulkan">
+      <UniqueIdentifier>{adc11b98-b158-4057-9fde-f66c663ea000}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Render">
-      <UniqueIdentifier>{0ea35788-74b2-4fc1-b1f1-bb479179e3bf}</UniqueIdentifier>
+      <UniqueIdentifier>{bce7a61f-bc15-4f7d-98ee-78fe82efd169}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Renderers">
+      <UniqueIdentifier>{e246a127-5f5f-4b19-9a23-5261e26e3951}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Common">
+      <UniqueIdentifier>{3719130c-6429-4aa8-964c-09551cd19117}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Renderers\VolumeRenderer">
+      <UniqueIdentifier>{ffc9588a-734f-41b0-924a-b23b162ae67b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{4fcf2503-2d76-4ea4-bf2e-d05f27f4d709}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGuiUtils">
+      <UniqueIdentifier>{34cc34e4-e074-4eea-8269-6b34251a9b95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Renderers\WaterRenderer">
+      <UniqueIdentifier>{91c451d1-e1e9-4626-b9df-ad222350e1c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Common\FFT">
+      <UniqueIdentifier>{d948161a-120b-46b5-82fc-c9c078608fd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Renderers\FastVolumeRenderer">
+      <UniqueIdentifier>{c67b0fe3-1f9e-48ae-ac3a-fcbfcc60ba7d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cfg.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cpp.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cross.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cross_parsed_ir.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_cross_util.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_glsl.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_hlsl.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_msl.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_parser.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\spirv-cross\spirv_reflect.cpp">
+      <Filter>spirv-cross</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\tiny_obj_loader\include\tiny_obj_loader.cc">
+      <Filter>tiny_obj_loader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\jsoncpp\jsoncpp.cpp">
+      <Filter>jsoncpp</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\dependencies\imgui\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\imgui\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\imgui\imgui_widgets.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dependencies\imgui\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\Render\Core.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\GLSL.std.450.h">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\Render.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\Swapchain.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cfg.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\ImageView.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_common.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\Pipeline.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cpp.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\ShaderModule.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cross.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\QueueIndices.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cross_parsed_ir.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\Surface.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_cross_util.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\Framebuffer.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_glsl.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\RenderPass.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_hlsl.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\RenderStateCache.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_msl.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\VertexDeclaration.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_parser.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\Buffer.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\dependencies\spirv-cross\spirv_reflect.hpp">
+      <Filter>spirv-cross</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\StagedBuffer.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\src\Scene\Scene.h">
+      <Filter>Scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Render\PresentQueue.h">
-      <Filter>Render</Filter>
+    <ClInclude Include="..\..\src\Scene\Mesh.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\PresentQueue.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\RenderGraph.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\RenderPass.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Swapchain.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Image.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\PipelineCache.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\DescriptorSetCache.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Core.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Pipeline.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\ImageView.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\RenderPassCache.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Framebuffer.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\StagedResources.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Buffer.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\ShaderProgram.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\ShaderMemoryPool.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\ShaderModule.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\VertexDeclaration.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Surface.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\QueueIndices.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Sampler.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\BlurBuilder.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\MipBuilder.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\DebugRenderer.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\SSVGIRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\LSGIRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\LegitVulkan.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\InterleaveBuilder.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\VolumeRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\ImageLoader.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\VolumeRendering\Preintegrator.h">
+      <Filter>Render\Renderers\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\VolumeRendering\VolumeObject.h">
+      <Filter>Render\Renderers\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\PointRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Scene\PointMesh.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\SSVCTGIRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\SSCTGIRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\imgui\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\imgui\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\imgui\imstb_truetype.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\imgui\imstb_textedit.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\imgui\imstb_rectpack.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\imgui\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\ImGuiRenderer.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\TimestampQuery.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\ProfilerTask.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\CpuProfiler.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Handles.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ImGuiUtils\ImGuiProfilerRenderer.h">
+      <Filter>ImGuiUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\ArrayBucketeer.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\ListBucketeer.h">
+      <Filter>Render\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\GpuProfiler.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LegitVulkan\Pool.h">
+      <Filter>LegitVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\SSShiftGIRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Common\FFT\FFTRenderer.h">
+      <Filter>Render\Common\FFT</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\WaterRenderer\ShrodingerSolver.h">
+      <Filter>Render\Renderers\WaterRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\WaterRenderer\SimpleSolver.h">
+      <Filter>Render\Renderers\WaterRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\WaterRenderer\WaterParticleRenderer.h">
+      <Filter>Render\Renderers\WaterRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Render\Renderers\FastVolumeRenderer\FastVolumeRenderer.h">
+      <Filter>Render\Renderers\FastVolumeRenderer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

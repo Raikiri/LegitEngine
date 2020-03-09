@@ -1,0 +1,37 @@
+layout(binding = 0, set = 0) uniform SimulationDataBuffer
+{
+  uvec4 volumeResolution;
+  vec4 volumeMin;
+  vec4 volumeMax;
+  vec4 stepSize;
+  vec4 invStepSize;
+  float timeStep;
+  float h;
+  uint particlesCount;
+  int iterationIndex;
+} simulationDataBuf;
+#define ENABLE_CLAMPING 1
+
+vec3 GetWorldVolumePoint(vec3 volumeUv)
+{
+  return simulationDataBuf.volumeMin.xyz + (simulationDataBuf.volumeMax.xyz - simulationDataBuf.volumeMin.xyz) * volumeUv;
+}
+vec3 GetUvVolumePoint(vec3 worldPoint)
+{
+  return (worldPoint - simulationDataBuf.volumeMin.xyz) / (simulationDataBuf.volumeMax.xyz - simulationDataBuf.volumeMin.xyz);
+}
+
+ivec3 ClampNode(ivec3 nodeIndex)
+{
+  #if (ENABLE_CLAMPING)
+    //return max(ivec3(0), min(ivec3(simulationDataBuf.volumeResolution.xyz) - ivec3(1), nodeIndex));
+    /*nodeIndex = abs(nodeIndex);
+    nodeIndex = ivec3(simulationDataBuf.volumeResolution.xyz) - abs(ivec3(simulationDataBuf.volumeResolution.xyz) - nodeIndex);
+    return nodeIndex;*/
+    //return max(ivec3(0), min(ivec3(simulationDataBuf.volumeResolution.xyz) - ivec3(1), nodeIndex));
+    return ((nodeIndex % ivec3(simulationDataBuf.volumeResolution.xyz)) + ivec3(simulationDataBuf.volumeResolution.xyz)) % ivec3(simulationDataBuf.volumeResolution.xyz);
+  #else
+    return nodeIndex;
+  #endif
+}
+

@@ -1,0 +1,97 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+
+layout(binding = 0, set = 0) uniform PassDataBuffer
+{
+  mat4 viewMatrix; //world -> camera
+  mat4 projMatrix; //camera -> ndc
+  float time;
+  float lightAbsorb;
+  float splatOpacity; 
+  uint totalBucketsCount;
+} passDataBuf;
+
+#include "../Common/projection.decl"
+#include "../Common/ListBucketeer/bucketsData.decl"
+#include "../Common/ListBucketeer/pointsListData.decl"
+//#include "../Common/ListBucketeer/blockPointsListData.decl"
+#include "../Common/pointsData.decl"
+
+
+
+void main() 
+{
+  uint bucketIndex = uint(gl_GlobalInvocationID.x);
+  vec3 viewDir = (inverse(passDataBuf.viewMatrix) * vec4(0.0f, 0.0f, 1.0f, 0.0f)).xyz;
+  if(bucketIndex < passDataBuf.totalBucketsCount)
+  {
+    /*bucketsBuf.data[bucketIndex].blockHeadPointIndex = bucketsBuf.data[bucketIndex].headPointIndex;
+      
+    for(uint pointIndex = bucketsBuf.data[bucketIndex].blockHeadPointIndex; pointIndex != uint(-1); pointIndex = pointsListBuf.data[pointIndex].nextPointIndex)
+    {
+      blockPointsListBuf.data[pointIndex].lists[0].nextPointIndex = pointsListBuf.data[pointIndex].nextPointIndex;
+      blockPointsListBuf.data[pointIndex].lists[1].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[2].nextPointIndex = uint(-1);
+      blockPointsListBuf.data[pointIndex].lists[3].nextPointIndex = uint(-1);
+    }*/
+    BucketLocation bucketLocation = GetBucketLocation(bucketIndex);
+    mat4 invViewProjMatrix = inverse(passDataBuf.projMatrix * passDataBuf.viewMatrix);
+    vec2 screenCoord = (vec2(bucketLocation.localCoord) + vec2(0.5f)) / vec2(mipInfosBuf.data[bucketLocation.mipLevel].size.xy);
+    vec3 lightDir = normalize(
+      Unproject(vec3(screenCoord, 1.0f), invViewProjMatrix) -
+      Unproject(vec3(screenCoord, 0.0f), invViewProjMatrix));
+
+
+    float splatWidth = 0.01f;
+    
+    float bucketRemainingLight = 1.0f;
+    ivec2 testLocalCoord = bucketLocation.localCoord;
+    uint mipsCount = mipInfosBuf.data.length();
+
+    for(uint mipLevel = bucketLocation.mipLevel + 1; mipLevel < mipsCount; mipLevel++)
+    {
+      testLocalCoord /= 2;//>> 1;
+      uint testBucketIndex = GetBucketIndexSafe(testLocalCoord, mipLevel);
+      if(testBucketIndex != uint(-1))
+        bucketRemainingLight *= pow(passDataBuf.splatOpacity, bucketsBuf.data[testBucketIndex].pointsCount);
+    }
+    
+    bool isFirst = true;
+    float lastDist = 0.0f;
+    vec3 lastNorm = viewDir;
+    //bucketRemainingLight = 1.0f;
+    //for(int mipNumber = 0; mipNumber < mipsCount; mipNumber++)
+    if(true)
+    {
+      uint currMipLevel = bucketLocation.mipLevel;
+
+      uint currPointIndex = bucketsBuf.data[bucketIndex].headPointIndex;
+      while(currPointIndex != uint(-1) && bucketRemainingLight > 0.01f)
+      {
+        float currDist = dot(pointsBuf.data[currPointIndex].worldPos.xyz, viewDir);
+        if(isFirst)
+        {
+          lastDist = currDist;
+        }
+        isFirst = false;
+        float deltaDist = currDist - lastDist;
+        float eps = 1e-3f;
+        {
+          bucketRemainingLight *= max(passDataBuf.splatOpacity, exp(-deltaDist * passDataBuf.lightAbsorb));
+        }
+        lastDist = currDist;
+        
+        //bucketRemainingLight *= splatOcclusion;
+
+        pointsBuf.data[currPointIndex].directLight.rgb = vec3(0.5f) * bucketRemainingLight;
+        //bucketRemainingLight *= splatOcclusion;
+        currPointIndex = pointsListBuf.data[currPointIndex].nextPointIndex;
+      }
+    }
+  }
+}
+

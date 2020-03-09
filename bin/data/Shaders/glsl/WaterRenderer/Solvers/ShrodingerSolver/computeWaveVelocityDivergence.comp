@@ -1,0 +1,78 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 8
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = WORKGROUP_SIZE ) in;
+
+#include "../simulationData.decl" //binding 0 
+#include "../../../Common/complex.decl"
+
+uniform layout(binding = 1, rgba32f) image3D waveFuncImage;
+uniform layout(binding = 2, r32f) image3D divergenceImage;
+
+WaveFunc ComputeWaveFuncLaplacian(ivec3 nodeIndex)
+{
+  vec3 invStepSize = simulationDataBuf.invStepSize.xyz;
+
+  return WaveFunc(
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(-1, 0, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 1, 0, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, -1, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0,  1, 0))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0, -1))) +
+    imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0,  1))) -
+    imageLoad(waveFuncImage, ClampNode(nodeIndex)) * 6.0f) * invStepSize.x * invStepSize.x;
+}
+
+float ComputeVelocityDivergence(ivec3 nodeIndex)
+{
+  WaveFunc waveFunc = imageLoad(waveFuncImage, ClampNode(nodeIndex));
+  WaveFunc laplacian = ComputeWaveFuncLaplacian(nodeIndex);
+  
+  WaveFunc mult = MulI(Conjugate(waveFunc));
+  return -simulationDataBuf.h * Re(Dot(mult, laplacian));
+}
+
+float MinArg(float arg)
+{
+  if(arg > pi)
+    return arg - pi;
+  if(arg < -pi)
+    return arg + pi;
+  return arg;
+}
+
+float ComputeVelocityArgDivergence(ivec3 nodeIndex)
+{
+  WaveFunc waveFunc = imageLoad(waveFuncImage, ClampNode(nodeIndex));
+  vec3 edgeFluxes;
+  edgeFluxes.x = simulationDataBuf.h * MinArg(
+    Arg(Dot(Conjugate(waveFunc), imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3( 1, 0, 0))))) +
+    Arg(Dot(Conjugate(waveFunc), imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(-1, 0, 0))))));
+  edgeFluxes.y = simulationDataBuf.h * MinArg(
+    Arg(Dot(Conjugate(waveFunc), imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0,  1, 0))))) +
+    Arg(Dot(Conjugate(waveFunc), imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, -1, 0))))));
+  edgeFluxes.z = simulationDataBuf.h * MinArg(
+    Arg(Dot(Conjugate(waveFunc), imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0,  1))))) +
+    Arg(Dot(Conjugate(waveFunc), imageLoad(waveFuncImage, ClampNode(nodeIndex + ivec3(0, 0, -1))))));
+    
+  vec3 edgeLengths = simulationDataBuf.stepSize.xyz;
+  vec3 faceAreas = vec3(
+    simulationDataBuf.stepSize.y * simulationDataBuf.stepSize.z,
+    simulationDataBuf.stepSize.x * simulationDataBuf.stepSize.z,
+    simulationDataBuf.stepSize.x * simulationDataBuf.stepSize.y);
+    
+  float volume = simulationDataBuf.stepSize.x * simulationDataBuf.stepSize.y * simulationDataBuf.stepSize.z;
+  
+  return dot(faceAreas / edgeLengths / volume, edgeFluxes);
+}
+
+void main() 
+{
+  ivec3 nodeIndex = ivec3(gl_GlobalInvocationID.xyz);
+  
+  //float divergence = ComputeVelocityDivergence(nodeIndex);
+  float divergence = ComputeVelocityArgDivergence(nodeIndex);
+  imageStore(divergenceImage, nodeIndex, vec4(divergence, 0.0f, 0.0f, 0.0f));
+}

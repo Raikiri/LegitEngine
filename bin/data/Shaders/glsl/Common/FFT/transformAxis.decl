@@ -1,0 +1,14 @@
+int idot(ivec3 a, ivec3 b)
+{
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+int GetTransformCoord(ivec3 volumeCoord, ivec3 transformAxis)
+{
+  return idot(volumeCoord, transformAxis);
+}
+
+ivec3 GetSideCoords(ivec3 volumeCoord, ivec3 transformAxis)
+{
+  return volumeCoord * (ivec3(1) - transformAxis);
+}
