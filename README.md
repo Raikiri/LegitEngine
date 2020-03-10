@@ -83,7 +83,7 @@ while (glfwWindowShouldClose(window))
   {
     auto frameInfo = inFlightQueue->BeginFrame();
     {
-      core->GetRenderGraph()->AddPass(legit::RenderGraph::ComputePassDesc()
+      core->GetRenderGraph()->AddPass(legit::RenderGraph::RenderPassDesc()
         .SetColorAttachments({ { frameInfo.swapchainImageViewProxyId, vk::AttachmentLoadOp::eDontCare } })
         .SetRenderAreaExtent(this->viewportExtent)
         .SetRecordFunc([this](legit::RenderGraph::RenderPassContext passContext)
