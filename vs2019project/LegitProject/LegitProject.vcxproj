@@ -178,6 +178,7 @@
     <ClInclude Include="..\..\dependencies\spirv-cross\spirv_msl.hpp" />
     <ClInclude Include="..\..\dependencies\spirv-cross\spirv_parser.hpp" />
     <ClInclude Include="..\..\dependencies\spirv-cross\spirv_reflect.hpp" />
+    <ClInclude Include="..\..\src\ImGuiUtils\ImGuiProfilerRenderer.h" />
     <ClInclude Include="..\..\src\ImGuiUtils\ProfilerTask.h" />
     <ClInclude Include="..\..\src\LegitVulkan\Buffer.h" />
     <ClInclude Include="..\..\src\LegitVulkan\Core.h" />
