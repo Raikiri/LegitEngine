@@ -72,16 +72,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)\..\bin\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\..\build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>d:\Portable soft\VulkanSDK\1.1.121.2\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>d:\Portable soft\VulkanSDK\1.1.121.2\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <SourcePath>$(SourcePath)</SourcePath>
     <TargetName>LegitEngineDebug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(SolutionDir)\..\build\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)\..\bin\$(Platform)\</OutDir>
-    <IncludePath>d:\Portable soft\VulkanSDK\1.1.121.2\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>d:\Portable soft\VulkanSDK\1.1.121.2\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <SourcePath>$(SourcePath)</SourcePath>
     <TargetName>LegitEngine</TargetName>
   </PropertyGroup>
