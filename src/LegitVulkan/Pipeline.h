@@ -189,7 +189,7 @@ namespace legit
         .setBasePipelineHandle(nullptr) //use later
         .setBasePipelineIndex(-1);
 
-      pipeline = logicalDevice.createGraphicsPipelineUnique(nullptr, pipelineCreateInfo);
+      pipeline = logicalDevice.createGraphicsPipelineUnique(nullptr, pipelineCreateInfo).value;
     }
   private:
     vk::PipelineLayout pipelineLayout;
@@ -229,7 +229,7 @@ namespace legit
         .setBasePipelineHandle(nullptr) //use later
         .setBasePipelineIndex(-1);
 
-      pipeline = logicalDevice.createComputePipelineUnique(nullptr, pipelineCreateInfo);
+      pipeline = logicalDevice.createComputePipelineUnique(nullptr, pipelineCreateInfo).value;
     }
   private:
     vk::PipelineLayout pipelineLayout;

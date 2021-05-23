@@ -41,7 +41,7 @@ namespace legit
     QueryResult QueryResults(vk::Device logicalDevice)
     {
       std::fill(queryResults.begin(), queryResults.end(), 0);
-      logicalDevice.getQueryPoolResults<uint64_t>(queryPool.get(), 0, currTimestampIndex, queryResults, sizeof(std::uint64_t), vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+      logicalDevice.getQueryPoolResults(queryPool.get(), 0, currTimestampIndex, queryResults.size() * sizeof(std::uint64_t), (void*)queryResults.data(), sizeof(std::uint64_t), vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
       for (uint32_t timestampIndex = 0; timestampIndex < currTimestampIndex; timestampIndex++)
       {
         timestampDatum[timestampIndex].time = (queryResults[timestampIndex] - queryResults[0]) * double(timestampPeriod / 1e9); //in seconds

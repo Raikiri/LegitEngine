@@ -49,8 +49,6 @@ glm::uvec3 ReadJsonVec3u(Json::Value vectorValue)
 #include "Render/Renderers/WaterRenderer/WaterParticleRenderer.h"
 
 
-
-
 struct ImGuiScopedFrame
 {
   ImGuiScopedFrame()
@@ -125,7 +123,12 @@ int RunDemo(int currDemo)
   windowDesc.hInstance = GetModuleHandle(NULL);
   windowDesc.hWnd = glfwGetWin32Window(window);
 
-  auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, true);
+  bool enableDebugging = false;
+  #if defined LEGIT_ENABLE_DEBUGGING
+  enableDebugging = true;
+  #endif
+
+  auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, enableDebugging);
 
   ImGuiRenderer imguiRenderer(core.get(), window);
   ImGuiUtils::ProfilersWindow profilersWindow;
