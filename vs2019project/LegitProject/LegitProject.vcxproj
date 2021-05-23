@@ -99,7 +99,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\dependencies\imgui;$(SolutionDir)\..\dependencies\spirv-cross;$(SolutionDir)\..\dependencies\tiny_obj_loader\include;$(SolutionDir)\..\dependencies\glm\include;$(SolutionDir)\..\dependencies\jsoncpp\;$(SolutionDir)\..\dependencies\glfw\include;$(SolutionDir)\..\dependencies\gli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)\..\dependencies\imgui;$(SolutionDir)\..\dependencies\spirv-cross;$(SolutionDir)\..\dependencies\tiny_obj_loader\include;$(SolutionDir)\..\dependencies\glm\include;$(SolutionDir)\..\dependencies\jsoncpp\;$(SolutionDir)\..\dependencies\glfw\include;$(SolutionDir)\..\dependencies\gli</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

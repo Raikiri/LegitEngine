@@ -19,6 +19,3 @@
 .vs
 /bin/movies/*
 /bin/data/Meshes/*
-*Debug.exe
-*.vcxproj.user
-imgui.ini
