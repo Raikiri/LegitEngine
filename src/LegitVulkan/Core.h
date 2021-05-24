@@ -20,7 +20,7 @@ namespace legit
       }
 
       this->instance = CreateInstance(resIntanceExtensions, validationLayers);
-      loader = vk::DispatchLoaderDynamic(instance.get());
+      loader = vk::DispatchLoaderDynamic(instance.get(), vkGetInstanceProcAddr);
 
       auto prop = vk::enumerateInstanceLayerProperties();
       

@@ -1,0 +1,3 @@
+[submodule "src/ImGuiUtils"]
+	path = src/ImGuiUtils
+	url = https://github.com/Raikiri/LegitProfiler

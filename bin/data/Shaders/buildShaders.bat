@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-set CompilerExe="d:\Portable soft\VulkanSDK\1.1.121.2\Bin\glslangValidator.exe"
-set OptimizerExe="d:\Portable soft\VulkanSDK\1.1.121.2\Bin\spirv-opt.exe"
+set CompilerExe="%VULKAN_SDK%\Bin\glslangValidator.exe"
+set OptimizerExe="%VULKAN_SDK%\Bin\spirv-opt.exe"
 set OptimizerConfig="OptimizerConfig.cfg"
 for /r glsl/ %%I in (*.vert) do (
   set outname=%%I
