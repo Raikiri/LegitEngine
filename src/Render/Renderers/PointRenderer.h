@@ -21,8 +21,9 @@ public:
 
     vertexDecl = Mesh::GetVertexDeclaration();
 
+    uintSampler.reset(new legit::Sampler(core->GetLogicalDevice(), vk::SamplerAddressMode::eClampToEdge, vk::Filter::eNearest, vk::SamplerMipmapMode::eNearest));
     screenspaceSampler.reset(new legit::Sampler(core->GetLogicalDevice(), vk::SamplerAddressMode::eClampToEdge, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear));
-    shadowmapSampler.reset(new legit::Sampler(core->GetLogicalDevice(), vk::SamplerAddressMode::eClampToEdge, vk::Filter::eLinear, vk::SamplerMipmapMode::eNearest, true));
+    shadowmapSampler.reset(new legit::Sampler(core->GetLogicalDevice(), vk::SamplerAddressMode::eClampToEdge, vk::Filter::eNearest, vk::SamplerMipmapMode::eNearest, true));
     ReloadShaders();
 
     {
@@ -205,7 +206,7 @@ private:
 
           std::vector<legit::ImageSamplerBinding> imageSamplerBindings;
           auto prevIndicesImageView = passContext.GetImageView(prevLevelViewProxyId);
-          imageSamplerBindings.push_back(shaderDataSetInfo->MakeImageSamplerBinding("prevIndicesSampler", prevIndicesImageView, screenspaceSampler.get()));
+          imageSamplerBindings.push_back(shaderDataSetInfo->MakeImageSamplerBinding("prevIndicesSampler", prevIndicesImageView, uintSampler.get()));
 
           std::vector<legit::StorageBufferBinding> storageBufferBindings;
           auto pointDataBuffer = passContext.GetBuffer(this->sceneResources->pointData->Id());
@@ -256,7 +257,7 @@ private:
 
           std::vector<legit::ImageSamplerBinding> imageSamplerBindings;
           auto pointIndicesImageView = passContext.GetImageView(srcIndexProxyId);
-          imageSamplerBindings.push_back(shaderDataSetInfo->MakeImageSamplerBinding("pointIndicesSampler", pointIndicesImageView, screenspaceSampler.get()));
+          imageSamplerBindings.push_back(shaderDataSetInfo->MakeImageSamplerBinding("pointIndicesSampler", pointIndicesImageView, uintSampler.get()));
           imageSamplerBindings.push_back(shaderDataSetInfo->MakeImageSamplerBinding("brushSampler", brushImageView.get(), screenspaceSampler.get()));
 
           std::vector<legit::StorageBufferBinding> storageBufferBindings;
@@ -1270,6 +1271,7 @@ private:
   int debugMip;
   int debugType;
 
+  std::unique_ptr<legit::Sampler> uintSampler;
   std::unique_ptr<legit::Sampler> screenspaceSampler;
   std::unique_ptr<legit::Sampler> shadowmapSampler;
 

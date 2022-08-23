@@ -27,11 +27,11 @@ struct Preintegrator
     float start = 0.476563;
     float end = 0.835938;
 
-    float t0 = GetPreintData<double>(start, end, VoH, 1).reflectProb;
-    float t1 = GetPreintData<double>(start, end, VoH, 10).reflectProb;
-    float t2 = GetPreintData<double>(start, end, VoH, 100).reflectProb;
-    float t3 = GetPreintData<double>(start, end, VoH, 1000).reflectProb;
-    float t4 = GetPreintData<double>(start, end, VoH, 10000).reflectProb;
+    float t0 = GetPreintData<T>(start, end, VoH, 1).reflectProb;
+    float t1 = GetPreintData<T>(start, end, VoH, 10).reflectProb;
+    float t2 = GetPreintData<T>(start, end, VoH, 100).reflectProb;
+    float t3 = GetPreintData<T>(start, end, VoH, 1000).reflectProb;
+    float t4 = GetPreintData<T>(start, end, VoH, 10000).reflectProb;
     float n1 = TransferFunction(start).refractionIndex;
     float n2 = TransferFunction(end).refractionIndex;
     float ref = FresnelFull(VoH, n1, n2);
@@ -81,13 +81,16 @@ struct Preintegrator
     float metalness;
   };
 
-  float saturate(float val)
+  template<typename T>
+  T saturate(T val)
   {
     return (val < 0.0f) ? 0.0f : ((val > 1.0f) ? 1.0f : val);
   }
-  float lerp(float a, float b, float t)
+
+  template<typename T>
+  T lerp(T a, T b, T t)
   {
-    return a * (1.0f - t) + b * t;
+    return a * (T(1.0) - t) + b * t;
   }
   SurfaceData TransferFunction(float volumeSample)
   {
@@ -225,7 +228,7 @@ struct Preintegrator
     return sumProb / (sumWeight + 1e-9f);
   }
   template<typename T>
-  PreintData GetPreintData(float startField, float endField, float VoH, int substepsCount)
+  PreintData GetPreintData(T startField, T endField, T VoH, int substepsCount)
   {
     T totalReflectProbability = 0;
     T totalScatterProbability = 0.0f;
@@ -235,26 +238,26 @@ struct Preintegrator
 
     T stepSize = 1.0e-2;
     T substepSize = stepSize / substepsCount;
-    SurfaceData prevSurfaceData = TransferFunction(startField);
+    SurfaceData prevSurfaceData = TransferFunction(float(startField));
     for (int substepIndex = 1; substepIndex <= substepsCount; substepIndex++)
     {
-      double ratio = double(substepIndex) / double(substepsCount);
-      double field = lerp(startField, endField, ratio);
-      SurfaceData surfaceData = TransferFunction(field);
+      T ratio = T(substepIndex) / T(substepsCount);
+      T field = lerp(T(startField), T(endField), ratio);
+      SurfaceData surfaceData = TransferFunction(float(field));
 
 
 
-      double fresnel = FresnelFull(VoH, prevSurfaceData.refractionIndex, surfaceData.refractionIndex);// GetFullFresnelProb(VoN, prevSurfaceData.refractionIndex, surfaceData.refractionIndex, surfaceData.roughness);
-      double scatter = 1.0 - exp(-surfaceData.density * substepSize);
+      T fresnel = FresnelFull(float(VoH), prevSurfaceData.refractionIndex, surfaceData.refractionIndex);// GetFullFresnelProb(VoN, prevSurfaceData.refractionIndex, surfaceData.refractionIndex, surfaceData.roughness);
+      T scatter = 1.0 - exp(-surfaceData.density * substepSize);
 
-      double remainingProb = (1.0 - totalReflectProbability - totalScatterProbability);
-      double reflectProb = remainingProb * fresnel;
+      T remainingProb = (1.0 - totalReflectProbability - totalScatterProbability);
+      T reflectProb = remainingProb * fresnel;
       if(totalReflectProbability + reflectProb > 0)
         reflectRoughness = (reflectRoughness * totalReflectProbability + reflectProb * surfaceData.roughness) / (totalReflectProbability + reflectProb);
       totalReflectProbability += reflectProb;
 
       remainingProb = (1.0 - totalReflectProbability - totalScatterProbability);
-      double scatterProb = remainingProb * scatter;
+      T scatterProb = remainingProb * scatter;
       if(float(totalScatterProbability + scatterProb) > 0)
       scatterColor = (scatterColor * float( totalScatterProbability) + float(scatterProb) * surfaceData.diffuseColor) / float(totalScatterProbability + scatterProb);
       totalScatterProbability += scatterProb;
@@ -268,26 +271,26 @@ struct Preintegrator
         VoH = sqrt(1.0f - newSinAlpha * newSinAlpha);
       }*/
 
-      //double fresnel = FresnelFull(VoH, prevSurfaceData.refractionIndex, surfaceData.refractionIndex);
+      //T fresnel = FresnelFull(VoH, prevSurfaceData.refractionIndex, surfaceData.refractionIndex);
       /*if (prevSurfaceData.refractionIndex < 1.3f && surfaceData.refractionIndex > 1.3f)
         fresnel = 1.0f;
       else
         fresnel = 0.0f;*/
-      //double scatter = 1.0f - exp(-surfaceData.density * substepSize);
+      //T scatter = 1.0f - exp(-surfaceData.density * substepSize);
 
-      /*double remainingProb = (1.0f - totalReflectProbability) * (1.0f - totalScatterProbability);
-      double reflectProb = remainingProb * fresnel;
-      double scatterProb = remainingProb * scatter;
+      /*T remainingProb = (1.0f - totalReflectProbability) * (1.0f - totalScatterProbability);
+      T reflectProb = remainingProb * fresnel;
+      T scatterProb = remainingProb * scatter;
 
       scatterColor = (scatterColor * totalScatterProbability + scatterProb * surfaceData.diffuseColor) / (totalScatterProbability + scatterProb + 1e-5f);
       totalReflectProbability += reflectProb;
       totalScatterProbability += scatterProb;*/
-      /*double remainingProb = (1.0f - totalReflectProbability - totalScatterProbability);
-      double reflectProb = remainingProb * fresnel;
+      /*T remainingProb = (1.0f - totalReflectProbability - totalScatterProbability);
+      T reflectProb = remainingProb * fresnel;
       totalReflectProbability += reflectProb;
 
       remainingProb = (1.0f - totalReflectProbability - totalScatterProbability);
-      double scatterProb = remainingProb * scatter;
+      T scatterProb = remainingProb * scatter;
       scatterColor = (scatterColor * totalScatterProbability + scatterProb * surfaceData.diffuseColor) / (totalScatterProbability + scatterProb + 1e-5f);
       totalScatterProbability += scatterProb;*/
 
@@ -295,11 +298,11 @@ struct Preintegrator
     }
 
     PreintData res;
-    res.reflectRoughness = reflectRoughness;
-    res.refractionRatio = TransferFunction(startField).refractionIndex / TransferFunction(endField).refractionIndex;
-    res.reflectProb = totalReflectProbability;
+    res.reflectRoughness = float(reflectRoughness);
+    res.refractionRatio = TransferFunction(float(startField)).refractionIndex / TransferFunction(float(endField)).refractionIndex;
+    res.reflectProb = float(totalReflectProbability);
     res.scatterColor = scatterColor;
-    res.scatterProb = totalScatterProbability;
+    res.scatterProb = float(totalScatterProbability);
     return res;
   }
   legit::ImageTexelData preintReflectTex;

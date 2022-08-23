@@ -1,4 +1,8 @@
+#pragma once
+#include "Handles.h"
+#include <vector>
 #include <chrono>
+#include <assert.h>
 namespace legit
 {
   class CpuProfiler
@@ -91,6 +95,6 @@ namespace legit
     size_t frameIndex;
     std::vector<legit::ProfilerTask> profilerTasks;
     hrc::time_point frameStartTime;
-    friend struct ScopedTask;
+    friend struct UniqueHandle<TaskHandleInfo, CpuProfiler>;
   };
 }

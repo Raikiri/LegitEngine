@@ -67,7 +67,7 @@ public:
           case GeometryTypes::RegularPoints:
           {
             float splatSize = 0.1f;
-            meshData = MeshData::GeneratePointMeshRegular(meshData, std::pow(1.0f / splatSize, 2));
+            meshData = MeshData::GeneratePointMeshRegular(meshData, std::pow(1.0f / splatSize, 2.0f));
           }break;
           case GeometryTypes::SizedPoints:
           {

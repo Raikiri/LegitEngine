@@ -80,6 +80,7 @@ namespace legit
 
       vk::ImageViewType viewType = vk::ImageViewType::eCube;
       assert(imageData->GetType() == vk::ImageType::e2D);
+      assert(imageData->GetArrayLayersCount() == 6);
 
       auto imageViewCreateInfo = vk::ImageViewCreateInfo()
         .setImage(imageData->GetHandle())

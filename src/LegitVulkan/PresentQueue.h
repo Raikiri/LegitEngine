@@ -27,7 +27,7 @@ namespace legit
         .setWaitSemaphoreCount(1)
         .setPWaitSemaphores(waitSemaphores);
 
-      core->GetPresentQueue().presentKHR(presentInfo);
+      auto res = core->GetPresentQueue().presentKHR(presentInfo);
     }
     vk::Extent2D GetImageSize()
     {
@@ -61,6 +61,7 @@ namespace legit
         frame.renderingFinishedSemaphore = core->CreateVulkanSemaphore();
 
         frame.commandBuffer = std::move(core->AllocateCommandBuffers(1)[0]);
+        core->SetObjectDebugName(frame.commandBuffer.get(), std::string("Frame") + std::to_string(frameIndex) + " command buffer");
         frame.shaderMemoryBuffer = std::unique_ptr<legit::Buffer>(new legit::Buffer(core->GetPhysicalDevice(), core->GetLogicalDevice(), 100000000, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostCoherent));
         frame.gpuProfiler = std::unique_ptr<legit::GpuProfiler>(new legit::GpuProfiler(core->GetPhysicalDevice(), core->GetLogicalDevice(), 512));
         frames.push_back(std::move(frame));
@@ -108,7 +109,7 @@ namespace legit
       {
         swapchainViewProxyId = core->GetRenderGraph()->AddExternalImageView(currSwapchainImageView);
       }
-      core->GetRenderGraph()->AddPass(legit::RenderGraph::FrameSyncPassDesc());
+      core->GetRenderGraph()->AddPass(legit::RenderGraph::FrameSyncBeginPassDesc());
 
       memoryPool->MapBuffer(currFrame.shaderMemoryBuffer.get());
 
@@ -124,6 +125,7 @@ namespace legit
       auto &currFrame = frames[frameIndex];
 
       core->GetRenderGraph()->AddImagePresent(swapchainImageViewProxies[currSwapchainImageView]->Id());
+      core->GetRenderGraph()->AddPass(legit::RenderGraph::FrameSyncEndPassDesc());
 
       auto bufferBeginInfo = vk::CommandBufferBeginInfo()
         .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);

@@ -4,10 +4,10 @@ namespace legit
 {
   struct ImageTexelData
   {
-    size_t layersCount;
-    vk::Format format;
-    size_t texelSize;
-    glm::uvec3 baseSize;
+    size_t layersCount = 0;
+    vk::Format format = vk::Format::eUndefined;
+    size_t texelSize = 0;
+    glm::uvec3 baseSize = { 0, 0, 0 };
 
     struct Mip
     {
@@ -23,7 +23,7 @@ namespace legit
     std::vector<uint8_t> texels;
   };
 
-  ImageTexelData CreateTestCubeTexelData()
+  static ImageTexelData CreateTestCubeTexelData()
   {
     glm::uvec3 size = { 64, 64, 1 };
     ImageTexelData texelData;
@@ -64,7 +64,9 @@ namespace legit
     return texelData;
   }
 
-  ImageTexelData LoadTexelDataFromGli(const gli::texture &texture)
+
+
+  static ImageTexelData LoadTexelDataFromGli(const gli::texture &texture)
   {
     glm::uvec3 size = { texture.extent().x, texture.extent().y, texture.extent().z };
     ImageTexelData texelData;
@@ -72,6 +74,17 @@ namespace legit
     texelData.layersCount = texture.max_face() + 1;
     switch (texture.format())
     {
+      case gli::format::FORMAT_RGBA8_UINT_PACK8:
+      case gli::format::FORMAT_RGBA8_SRGB_PACK8:
+      {
+        texelData.format = vk::Format::eR8G8B8A8Srgb;
+        texelData.texelSize = 4 * sizeof(uint8_t);
+      }break;
+      case gli::format::FORMAT_RGB8_UINT_PACK8:
+      {
+        texelData.format = vk::Format::eR8G8B8Srgb;
+        texelData.texelSize = 3 * sizeof(uint8_t);
+      }break;
       case gli::format::FORMAT_RGBA8_UNORM_PACK8:
       {
         texelData.format = vk::Format::eR8G8B8A8Unorm;
@@ -139,13 +152,18 @@ namespace legit
     assert(texelData.texels.size() == currOffset);
     return texelData;
   }
-  ImageTexelData LoadKtxFromFile(std::string filename)
+  static ImageTexelData LoadKtxFromFile(std::string filename)
   {
     gli::texture texture = gli::load(filename);
-    return LoadTexelDataFromGli(texture);
+    if (!texture.empty())
+      return LoadTexelDataFromGli(texture);
+    else
+      return ImageTexelData();
   }
 
-  gli::texture LoadTexelDataToGli(ImageTexelData texelData)
+
+
+  static gli::texture LoadTexelDataToGli(ImageTexelData texelData)
   {
     gli::texture::format_type format;
     switch (texelData.format)
@@ -153,6 +171,10 @@ namespace legit
       case vk::Format::eR8G8B8A8Unorm:
       {
         format = gli::format::FORMAT_RGBA8_UNORM_PACK8;
+      }break;
+      case vk::Format::eR8G8B8A8Srgb:
+      {
+        format = gli::format::FORMAT_RGBA8_SRGB_PACK8;
       }break;
       case vk::Format::eR32G32B32A32Sfloat:
       {
@@ -188,19 +210,42 @@ namespace legit
     return texture;
   }
 
+  static void SaveKtxToFile(const ImageTexelData& data, std::string filename)
+  {
+    auto gliData = legit::LoadTexelDataToGli(data);
+    gli::save(gliData, filename);
+  }
 
-  legit::ImageTexelData CreateSimpleImageTexelData(glm::uint8 *pixels, int width, int height)
+
+  static size_t GetFormatSize(vk::Format format)
+  {
+    switch(format)
+    {
+      case vk::Format::eR8G8B8A8Unorm:
+        return 4;
+      break;
+      case vk::Format::eR32G32B32A32Sfloat:
+        return 4 * sizeof(float);
+      break;
+      case vk::Format::eR16G16B16A16Sfloat:
+        return 2 * sizeof(float);
+      break;
+    }
+    assert(0);
+    return -1;
+  }
+  static legit::ImageTexelData CreateSimpleImageTexelData(glm::uint8 *pixels, int width, int height, vk::Format format = vk::Format::eR8G8B8A8Unorm)
   {
     legit::ImageTexelData texelData;
     texelData.baseSize = glm::uvec3(width, height, 1);
-    texelData.format = vk::Format::eR8G8B8A8Unorm;
+    texelData.format = format;
     texelData.layersCount = 1;
     texelData.mips.resize(1);
     texelData.mips[0].size = texelData.baseSize;
     texelData.mips[0].layers.resize(texelData.layersCount);
     texelData.mips[0].layers[0].offset = 0;
-    texelData.texels.resize(width * height * 4);
-    texelData.texelSize = 4;
+    texelData.texelSize = GetFormatSize(format);
+    texelData.texels.resize(width * height * texelData.texelSize);
     size_t totalSize = width * height * texelData.texelSize;
     memcpy(texelData.texels.data(), pixels, totalSize);
     return texelData;
@@ -208,7 +253,7 @@ namespace legit
 
 
 
-  void AddTransitionBarrier(legit::ImageData *imageData, legit::ImageUsageTypes srcUsageType, legit::ImageUsageTypes dstUsageType, vk::CommandBuffer commandBuffer)
+  static void AddTransitionBarrier(legit::ImageData *imageData, legit::ImageUsageTypes srcUsageType, legit::ImageUsageTypes dstUsageType, vk::CommandBuffer commandBuffer)
   {
     auto srcImageAccessPattern = GetSrcImageAccessPattern(srcUsageType);
     auto dstImageAccessPattern = GetDstImageAccessPattern(dstUsageType);
@@ -235,7 +280,7 @@ namespace legit
     commandBuffer.pipelineBarrier(srcImageAccessPattern.stage, dstImageAccessPattern.stage, vk::DependencyFlags(), {}, {}, { imageBarrier });
   }
 
-  void LoadTexelData(legit::Core *core, const ImageTexelData *texelData, legit::ImageData *dstImageData)
+  static void LoadTexelData(legit::Core *core, const ImageTexelData *texelData, legit::ImageData *dstImageData, legit::ImageUsageTypes dstUsageType = legit::ImageUsageTypes::GraphicsShaderRead)
   {
     auto stagingBuffer = std::unique_ptr<legit::Buffer>(new legit::Buffer(core->GetPhysicalDevice(), core->GetLogicalDevice(), texelData->texels.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 
@@ -274,7 +319,7 @@ namespace legit
     {
       AddTransitionBarrier(dstImageData, legit::ImageUsageTypes::None, legit::ImageUsageTypes::TransferDst, transferCommandBuffer);
       transferCommandBuffer.copyBufferToImage(stagingBuffer->GetHandle(), dstImageData->GetHandle(), vk::ImageLayout::eTransferDstOptimal, copyRegions);
-      AddTransitionBarrier(dstImageData, legit::ImageUsageTypes::TransferDst, legit::ImageUsageTypes::GraphicsShaderRead, transferCommandBuffer);
+      AddTransitionBarrier(dstImageData, legit::ImageUsageTypes::TransferDst, dstUsageType, transferCommandBuffer);
     }
     transferQueue.EndCommandBuffer();
   }

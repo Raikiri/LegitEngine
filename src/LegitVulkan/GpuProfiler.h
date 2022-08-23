@@ -115,6 +115,6 @@ namespace legit
     size_t frameIndex;
     std::vector<legit::ProfilerTask> profilerTasks;
     vk::CommandBuffer frameCommandBuffer;
-    friend struct ScopedTask;
+    friend struct UniqueHandle<TaskHandleInfo, GpuProfiler>;
   };
 }

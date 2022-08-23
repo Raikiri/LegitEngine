@@ -1,13 +1,14 @@
+#pragma once
 #define VK_USE_PLATFORM_WIN32_KHR
 //#include <vulkan/vulkan.h>
 //#include <vulkan/vk_sdk_platform.h>
+#define NOMINMAX
 #include <vulkan/vulkan.hpp>
 
-#define NOMINMAX
-#include <Windows.h>
+//#include <Windows.h>
 
 #include <glm/glm.hpp>
-#include "../ImGuiUtils/ProfilerTask.h"
+#include "../ImGuiUtils/ProfilerTask.h" 
 #include "Handles.h"
 #include "Pool.h"
 #include "CpuProfiler.h"
@@ -31,9 +32,10 @@
 #include "DescriptorSetCache.h"
 #include "PipelineCache.h"
 #include "RenderPassCache.h"
-#include "RenderGraph.h"
-#include "Core.h"
 
+#include "Core.h"
+#include "RenderGraph.h"
+#include "CoreImpl.h"
 
 #include "PresentQueue.h"
 

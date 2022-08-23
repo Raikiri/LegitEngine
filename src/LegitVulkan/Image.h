@@ -18,8 +18,8 @@ namespace legit
     }
     return usageFlags;
   }
-  vk::ImageUsageFlags colorImageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-  vk::ImageUsageFlags depthImageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+  static const vk::ImageUsageFlags colorImageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+  static const vk::ImageUsageFlags depthImageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
 
   class Swapchain;
   class RenderTarget;
@@ -185,8 +185,8 @@ namespace legit
         .setUsage(usage)
         .setSharingMode(vk::SharingMode::eExclusive)
         .setSamples(vk::SampleCountFlagBits::e1)
-        .setFlags(vk::ImageCreateFlags());/*
-                                          .setTiling(vk::ImageTiling::eOptimal);*/
+        .setFlags(vk::ImageCreateFlags())
+         .setTiling(vk::ImageTiling::eOptimal);
       return imageInfo;
     }
 
@@ -209,7 +209,7 @@ namespace legit
     }
 
 
-    Image(vk::PhysicalDevice physicalDevice, vk::Device logicalDevice, vk::ImageCreateInfo imageInfo)
+    Image(vk::PhysicalDevice physicalDevice, vk::Device logicalDevice, vk::ImageCreateInfo imageInfo, vk::MemoryPropertyFlags memFlags = vk::MemoryPropertyFlagBits::eDeviceLocal)
     {
       imageHandle = logicalDevice.createImageUnique(imageInfo);
       glm::uvec3 size = { imageInfo.extent.width, imageInfo.extent.height, imageInfo.extent.depth };
@@ -220,7 +220,7 @@ namespace legit
 
       auto allocInfo = vk::MemoryAllocateInfo()
         .setAllocationSize(imageMemRequirements.size)
-        .setMemoryTypeIndex(legit::FindMemoryTypeIndex(physicalDevice, imageMemRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
+        .setMemoryTypeIndex(legit::FindMemoryTypeIndex(physicalDevice, imageMemRequirements.memoryTypeBits, memFlags));
 
       imageMemory = logicalDevice.allocateMemoryUnique(allocInfo);
 

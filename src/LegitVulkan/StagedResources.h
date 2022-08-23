@@ -33,7 +33,7 @@ namespace legit
     vk::DeviceSize size;
   };
 
-  void LoadBufferData(legit::Core *core, void *bufferData, size_t bufferSize, legit::Buffer *dstBuffer)
+  static void LoadBufferData(legit::Core *core, void *bufferData, size_t bufferSize, legit::Buffer *dstBuffer)
   {
     auto stagingBuffer = std::unique_ptr<legit::Buffer>(new legit::Buffer(core->GetPhysicalDevice(), core->GetLogicalDevice(), bufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 

@@ -1,5 +1,19 @@
 namespace legit
 {
+  //srcAccessPattern.stage = vk::PipelineStageFlagBits::eTransfer; //memory from this stage
+  //srcAccessPattern.accessMask = vk::AccessFlagBits::eTransferWrite; //of this type
+  //has to become available 
+  //dstAccessPattern.stage = vk::PipelineStageFlagBits::eVertexInput; //in order to be made visible for this stage
+  //dstAccessPattern.accessMask = vk::AccessFlags::eVertexAttributeRead; //for this memory type
+
+  //before trying to read any dstAccessMask from dstStage(or later), make sure that writes to any srcAccessMask from srcStage (or earlier) have completed.
+
+  // it doesn�t make sense to mask access bits that correspond to reads (e.g. eShaderRead) in the source access mask.
+  // Reading from memory from different stages without a write issued in between is well-defined and requires no barrier
+
+  //we can only consider 1 previous pass that used the same image because that pass could not execute unless memory of this texture was made available before it.
+  //since the purpose of the left side of the barrier is to only make memory available, it should only be done if the previous pass writes this memory, otherwise it's already available
+
   enum struct QueueFamilyTypes
   {
     Graphics,
@@ -36,14 +50,14 @@ namespace legit
     Unknown //means it can be anything
   };
 
-  ImageAccessPattern GetSrcImageAccessPattern(ImageUsageTypes usageType)
+  static ImageAccessPattern GetSrcImageAccessPattern(ImageUsageTypes usageType)
   {
     ImageAccessPattern accessPattern;
     switch (usageType)
     {
       case ImageUsageTypes::GraphicsShaderRead:
       {
-        accessPattern.stage = vk::PipelineStageFlagBits::eVertexShader;
+        accessPattern.stage = vk::PipelineStageFlagBits::eFragmentShader;
         accessPattern.accessMask = vk::AccessFlags();
         accessPattern.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
         accessPattern.queueFamilyType = QueueFamilyTypes::Graphics;
@@ -122,7 +136,7 @@ namespace legit
     return accessPattern;
   }
 
-  ImageAccessPattern GetDstImageAccessPattern(ImageUsageTypes usageType)
+  static ImageAccessPattern GetDstImageAccessPattern(ImageUsageTypes usageType)
   {
     ImageAccessPattern accessPattern;
     switch (usageType)
@@ -137,7 +151,7 @@ namespace legit
       case ImageUsageTypes::GraphicsShaderReadWrite:
       {
         accessPattern.stage = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader;
-        accessPattern.accessMask = vk::AccessFlagBits::eShaderWrite;
+        accessPattern.accessMask = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
         accessPattern.layout = vk::ImageLayout::eGeneral;
         accessPattern.queueFamilyType = QueueFamilyTypes::Graphics;
       }break;
@@ -209,7 +223,7 @@ namespace legit
     return accessPattern;
   }
 
-  bool IsImageBarrierNeeded(ImageUsageTypes srcUsageType, ImageUsageTypes dstUsageType)
+  static bool IsImageBarrierNeeded(ImageUsageTypes srcUsageType, ImageUsageTypes dstUsageType)
   {
     if (srcUsageType == ImageUsageTypes::GraphicsShaderRead && dstUsageType == ImageUsageTypes::GraphicsShaderRead)
       return false;
@@ -230,6 +244,7 @@ namespace legit
 
   enum struct BufferUsageTypes
   {
+    VertexBuffer,
     GraphicsShaderReadWrite,
     ComputeShaderReadWrite,
     TransferDst,
@@ -238,11 +253,17 @@ namespace legit
     Unknown
   };
 
-  BufferAccessPattern GetSrcBufferAccessPattern(BufferUsageTypes usageType)
+  static BufferAccessPattern GetSrcBufferAccessPattern(BufferUsageTypes usageType)
   {
     BufferAccessPattern accessPattern;
     switch (usageType)
     {
+      case BufferUsageTypes::VertexBuffer:
+      {
+        accessPattern.stage = vk::PipelineStageFlagBits::eVertexInput;
+        accessPattern.accessMask = vk::AccessFlags();
+        accessPattern.queueFamilyType = QueueFamilyTypes::Graphics;
+      }break;
       case BufferUsageTypes::GraphicsShaderReadWrite:
       {
         accessPattern.stage = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader;
@@ -283,11 +304,17 @@ namespace legit
     return accessPattern;
   }
 
-  BufferAccessPattern GetDstBufferAccessPattern(BufferUsageTypes usageType)
+  static BufferAccessPattern GetDstBufferAccessPattern(BufferUsageTypes usageType)
   {
     BufferAccessPattern accessPattern;
     switch (usageType)
     {
+      case BufferUsageTypes::VertexBuffer:
+      {
+        accessPattern.stage = vk::PipelineStageFlagBits::eVertexInput;
+        accessPattern.accessMask = vk::AccessFlagBits::eVertexAttributeRead;
+        accessPattern.queueFamilyType = QueueFamilyTypes::Graphics;
+      }break;
       case BufferUsageTypes::GraphicsShaderReadWrite:
       {
         accessPattern.stage = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader;
@@ -309,7 +336,7 @@ namespace legit
       case BufferUsageTypes::TransferSrc:
       {
         accessPattern.stage = vk::PipelineStageFlagBits::eTransfer;
-        accessPattern.accessMask = vk::AccessFlags();
+        accessPattern.accessMask = vk::AccessFlagBits::eTransferRead;
         accessPattern.queueFamilyType = QueueFamilyTypes::Transfer;
       }break;
       case BufferUsageTypes::None:
@@ -328,8 +355,9 @@ namespace legit
     return accessPattern;
   }
 
-  bool IsBufferBarrierNeeded(BufferUsageTypes srcUsageType, BufferUsageTypes dstUsageType)
+  static bool IsBufferBarrierNeeded(BufferUsageTypes srcUsageType, BufferUsageTypes dstUsageType)
   {
+    //could be smarter
     return true;
   }
 }

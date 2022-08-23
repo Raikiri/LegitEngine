@@ -1,7 +1,7 @@
 #pragma once
 namespace vk
 {
-  bool operator < (const vk::ClearValue &v0, const vk::ClearValue &v1)
+  static bool operator < (const vk::ClearValue &v0, const vk::ClearValue &v1)
   {
     return
       std::tie(v0.color.int32[0], v0.color.int32[1], v0.color.int32[2], v0.color.int32[3]) <

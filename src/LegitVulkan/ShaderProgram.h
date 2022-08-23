@@ -1,6 +1,7 @@
 #include <map>
 #include <set>
 #include "spirv_cross.hpp"
+#include <algorithm>
 
 namespace legit
 {
@@ -156,14 +157,15 @@ namespace legit
     {
       bool operator<(const StorageBufferData &other) const
       {
-        return std::tie(name, shaderBindingIndex, size) < std::tie(other.name, other.shaderBindingIndex, other.size);
+        return std::tie(name, shaderBindingIndex, podPartSize, arrayMemberSize) < std::tie(other.name, other.shaderBindingIndex, other.podPartSize, other.arrayMemberSize);
       }
 
       std::string name;
       uint32_t shaderBindingIndex;
       vk::ShaderStageFlags stageFlags;
 
-      uint32_t size;
+      uint32_t podPartSize;
+      uint32_t arrayMemberSize;
       uint32_t offsetInSet;
     };
     struct StorageImageData
@@ -247,11 +249,22 @@ namespace legit
     {
       return storageBufferDatum[storageBufferId.id];
     }
+
     StorageBufferBinding MakeStorageBufferBinding(std::string bufferName, legit::Buffer *_buffer, vk::DeviceSize _offset = 0, vk::DeviceSize _size = VK_WHOLE_SIZE) const
     {
       auto storageBufferId = GetStorageBufferId(bufferName);
       assert(storageBufferId.IsValid());
       auto storageBufferInfo = GetStorageBufferInfo(storageBufferId);
+      return StorageBufferBinding(_buffer, storageBufferInfo.shaderBindingIndex, _offset, _size);
+    }
+
+    template<typename MemberType>
+    StorageBufferBinding MakeCheckedStorageBufferBinding(std::string bufferName, legit::Buffer* _buffer, vk::DeviceSize _offset = 0, vk::DeviceSize _size = VK_WHOLE_SIZE) const
+    {
+      auto storageBufferId = GetStorageBufferId(bufferName);
+      assert(storageBufferId.IsValid());
+      auto storageBufferInfo = GetStorageBufferInfo(storageBufferId);
+      assert(storageBufferInfo.arrayMemberSize == sizeof(MemberType));
       return StorageBufferBinding(_buffer, storageBufferInfo.shaderBindingIndex, _offset, _size);
     }
 
@@ -507,7 +520,8 @@ namespace legit
 
             dstStorageBuffer.shaderBindingIndex = srcStorageBuffer.shaderBindingIndex;
             dstStorageBuffer.name = srcStorageBuffer.name;
-            dstStorageBuffer.size = srcStorageBuffer.size;
+            dstStorageBuffer.arrayMemberSize = srcStorageBuffer.arrayMemberSize;
+            dstStorageBuffer.podPartSize = srcStorageBuffer.podPartSize;
             dstStorageBuffer.stageFlags = srcStorageBuffer.stageFlags;
           }
           else
@@ -516,7 +530,8 @@ namespace legit
             dstStorageBuffer.stageFlags |= srcStorageBuffer.stageFlags;
             assert(srcStorageBuffer.shaderBindingIndex == dstStorageBuffer.shaderBindingIndex);
             assert(srcStorageBuffer.name == dstStorageBuffer.name);
-            assert(srcStorageBuffer.size == dstStorageBuffer.size);
+            assert(srcStorageBuffer.podPartSize == dstStorageBuffer.podPartSize);
+            assert(srcStorageBuffer.arrayMemberSize == dstStorageBuffer.arrayMemberSize);
           }
         }
       }
@@ -838,16 +853,20 @@ namespace legit
             bufferData.shaderBindingIndex = shaderBindingIndex;
             bufferData.stageFlags = stageFlags;
             bufferData.name = buffer.name;
-
+            bufferData.podPartSize = 0;
+            bufferData.arrayMemberSize = 0;
+            bufferData.offsetInSet = 0; //should not be used
             size_t declaredSize = compiler.get_declared_struct_size(bufferType);
 
             uint32_t currOffset = 0;
+            bufferData.podPartSize = uint32_t(compiler.get_declared_struct_size(bufferType));
 
-            assert(currOffset == declaredSize); //alignment is wrong. avoid using smaller types before larger ones. completely avoid vec2/vec3
-            bufferData.size = currOffset;
-            bufferData.offsetInSet = descriptorSetLayoutKey.size;
-
-            descriptorSetLayoutKey.size += bufferData.size;
+            //taken from get_declared_struct_size_runtime_array implementation
+            auto& lastType = compiler.get_type(bufferType.member_types.back());
+            if (!lastType.array.empty() && lastType.array_size_literal[0] && lastType.array[0] == 0) // Runtime array
+              bufferData.arrayMemberSize = compiler.type_struct_member_array_stride(bufferType, uint32_t(bufferType.member_types.size() - 1));
+            else
+              bufferData.arrayMemberSize = 0;
           }
         }
 

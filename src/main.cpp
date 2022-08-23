@@ -22,6 +22,7 @@
 #include <ctime>
 #include <memory>
 #include <sstream>
+#include <array>
 
 glm::vec3 ReadJsonVec3f(Json::Value vectorValue)
 {
@@ -109,221 +110,221 @@ int RunDemo(int currDemo)
     rendererName = "VolumeRenderer";
   }
 
+  int nextDemo = currDemo;
+  bool isClosed = false;
+
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   GLFWwindow* window = glfwCreateWindow(1024, 1024, "Legit Vulkan renderer", nullptr, nullptr);
-
-
-  //uint32_t glfwExtensionCount = 0;
-  //const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-  const char* glfwExtensions[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
-  uint32_t glfwExtensionCount = 2;
-
-  legit::WindowDesc windowDesc = {};
-  windowDesc.hInstance = GetModuleHandle(NULL);
-  windowDesc.hWnd = glfwGetWin32Window(window);
-
-  bool enableDebugging = false;
-  #if defined LEGIT_ENABLE_DEBUGGING
-  enableDebugging = true;
-  #endif
-
-  auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, enableDebugging);
-
-  ImGuiRenderer imguiRenderer(core.get(), window);
-  ImGuiUtils::ProfilersWindow profilersWindow;
-
-  Json::Value configRoot;
-  Json::Reader reader;
-
-
-
-
-  std::ifstream fileStream(configFilename);
-  if (!fileStream.is_open())
-    std::cout << "Can't open scene file";
-  bool result = reader.parse(fileStream, configRoot);
-  if (result)
   {
-    std::cout << "File " << configFilename << ", parsing successful\n";
-  }
-  else
-  {
-    std::cout << "Error: File " << configFilename << ", parsing failed with errors: " << reader.getFormattedErrorMessages() << "\n";
-  }
-  Scene scene(configRoot["scene"], core.get(), geomType);
+    //uint32_t glfwExtensionCount = 0;
+    //const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    const char* glfwExtensions[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+    uint32_t glfwExtensionCount = sizeof(glfwExtensions) / sizeof(glfwExtensions[0]);
 
-  std::unique_ptr<BaseRenderer> renderer;
+    legit::WindowDesc windowDesc = {};
+    windowDesc.hInstance = GetModuleHandle(NULL);
+    windowDesc.hWnd = glfwGetWin32Window(window);
+
+    bool enableDebugging = false;
+    #if defined LEGIT_ENABLE_DEBUGGING
+    enableDebugging = true;
+    #endif
+
+    auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, enableDebugging);
+
+    ImGuiRenderer imguiRenderer(core.get(), window);
+    ImGuiUtils::ProfilersWindow profilersWindow;
+
+    Json::Value configRoot;
+    Json::Reader reader;
 
 
-  renderer = CreateRenderer(core.get(), rendererName);
 
-  renderer->RecreateSceneResources(&scene);
 
-  std::unique_ptr<legit::InFlightQueue> inFlightQueue;
-
-  Camera light;
-  //light.pos = glm::vec3(0.5f, 2.7f, -0.5f);
-  light.pos = glm::vec3(0.0f, 5.0f, 0.0f);
-  light.vertAngle = 3.1415f / 2.0f;
-
-  Camera camera;
-  camera.pos = glm::vec3(0.0f, 0.5f, -2.0f);
-
-  auto startTime = std::chrono::system_clock::now();
-
-  auto prevFrameTime = startTime;
-  size_t framesCount = 0;
-
-  glm::f64vec2 mousePos;
-  glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
-  glm::f64vec2 prevMousePos = mousePos;
-
-  int nextDemo = currDemo;
-  size_t frameIndex = 0;
-  bool isClosed = false;
-  while (!(isClosed = glfwWindowShouldClose(window)) && currDemo == nextDemo)
-  {
-    auto currFrameTime = std::chrono::system_clock::now();
-    float deltaTime = std::chrono::duration<float>(currFrameTime - prevFrameTime).count();
-    prevFrameTime = currFrameTime;
-
-    glfwPollEvents();
+    std::ifstream fileStream(configFilename);
+    if (!fileStream.is_open())
+      std::cout << "Can't open scene file";
+    bool result = reader.parse(fileStream, configRoot);
+    if (result)
     {
-      imguiRenderer.ProcessInput(window);
-
-      glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
-      if (!inFlightQueue)
-      {
-        std::cout << "recreated\n";
-        core->ClearCaches();
-        //core->GetRenderGraph()->Clear();
-        inFlightQueue = std::unique_ptr<legit::InFlightQueue>(new legit::InFlightQueue(core.get(), windowDesc, 2, vk::PresentModeKHR::eMailbox));
-        renderer->RecreateSwapchainResources(inFlightQueue->GetImageSize(), inFlightQueue->GetInFlightFramesCount());
-        imguiRenderer.RecreateSwapchainResources(inFlightQueue->GetImageSize(), inFlightQueue->GetInFlightFramesCount());
-      }
-
-      auto& imguiIO = ImGui::GetIO();
-      imguiIO.DeltaTime = 1.0f / 60.0f;              // set the time elapsed since the previous frame (in seconds)
-      imguiIO.DisplaySize.x = float(inFlightQueue->GetImageSize().width);             // set the current display width
-      imguiIO.DisplaySize.y = float(inFlightQueue->GetImageSize().height);             // set the current display height here
-
-      if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
-      {
-        glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.0f);
-
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
-        {
-          float mouseSpeed = 0.01f;
-          if (mousePos != prevMousePos)
-            renderer->ChangeView();
-          camera.horAngle += float((mousePos - prevMousePos).x * mouseSpeed);
-          camera.vertAngle += float((mousePos - prevMousePos).y * mouseSpeed);
-        }
-        glm::mat4 cameraTransform = camera.GetTransformMatrix();
-        glm::vec3 cameraForward = glm::vec3(cameraTransform * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-        glm::vec3 cameraRight = glm::vec3(cameraTransform * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
-        glm::vec3 cameraUp = glm::vec3(cameraTransform * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-
-
-        if (glfwGetKey(window, GLFW_KEY_E))
-          dir += glm::vec3(0.0f, -0.0f, 1.0f);
-        if (glfwGetKey(window, GLFW_KEY_S))
-          dir += glm::vec3(-1.0f, 0.0f, 0.0f);
-        if (glfwGetKey(window, GLFW_KEY_D))
-          dir += glm::vec3(0.0f, 0.0f, -1.0f);
-        if (glfwGetKey(window, GLFW_KEY_F))
-          dir += glm::vec3(1.0f, 0.0f, 0.0f);
-        if (glfwGetKey(window, GLFW_KEY_SPACE))
-          dir += glm::vec3(0.0f, 1.0f, 0.0f);
-        if (glfwGetKey(window, GLFW_KEY_C))
-          dir += glm::vec3(0.0f, -1.0f, 0.0f);
-
-        if (glm::length(dir) > 0.0f)
-          renderer->ChangeView();
-
-        float cameraSpeed = 3.0f;
-        camera.pos += cameraForward * dir.z * cameraSpeed * deltaTime;
-        camera.pos += cameraRight * dir.x * cameraSpeed * deltaTime;
-        camera.pos += cameraUp * dir.y * cameraSpeed * deltaTime;
-
-        if (glfwGetKey(window, GLFW_KEY_V))
-        {
-          renderer->ReloadShaders();
-        }
-      }
-
-      if (glfwGetKey(window, GLFW_KEY_1))
-      {
-        nextDemo = 0;
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-      }
-
-      const uint32_t FrameSetIndex = 0;
-      const uint32_t PassSetIndex = 1;
-      const uint32_t DrawCallSetIndex = 2;
-
-      try
-      {
-        auto frameInfo = inFlightQueue->BeginFrame();
-        {
-          ImGuiScopedFrame scopedFrame;
-
-          auto& gpuProfilerData = inFlightQueue->GetLastFrameGpuProfilerData();
-          auto& cpuProfilerData = inFlightQueue->GetLastFrameCpuProfilerData();
-
-          {
-            auto passCreationTask = inFlightQueue->GetCpuProfiler().StartScopedTask("PassCreation", legit::Colors::orange);
-            renderer->RenderFrame(frameInfo, camera, light, &scene, window);
-          }
-          if (!profilersWindow.stopProfiling)
-          {
-            auto profilersTask = inFlightQueue->GetCpuProfiler().StartScopedTask("Prf processing", legit::Colors::sunFlower);
-
-            profilersWindow.gpuGraph.LoadFrameData(gpuProfilerData.data(), gpuProfilerData.size());
-            profilersWindow.cpuGraph.LoadFrameData(cpuProfilerData.data(), cpuProfilerData.size());
-          }
-
-          {
-            auto profilersTask = inFlightQueue->GetCpuProfiler().StartScopedTask("Prf rendering", legit::Colors::belizeHole);
-            profilersWindow.Render();
-          }
-
-          ImGui::Begin("Demo controls", 0, ImGuiWindowFlags_NoScrollbar);
-          {
-            ImGui::Text("esdf, c, space: move camera");
-            ImGui::Text("v: live reload shaders");
-            //ImGui::LabelText("right mouse button: rotate camera");
-            ImGui::RadioButton("WaterRenderer", &nextDemo, 0);
-            ImGui::RadioButton("PointRenderer", &nextDemo, 1);
-            ImGui::RadioButton("SSVGIRenderer", &nextDemo, 2);
-            ImGui::RadioButton("VolumeRenderer", &nextDemo, 3);
-          }
-          ImGui::End();
-
-          //ImGui::ShowStyleEditor();
-          //ImGui::ShowDemoWindow();
-
-
-          ImGui::Render();
-          imguiRenderer.RenderFrame(frameInfo, window, ImGui::GetDrawData());
-        }
-        inFlightQueue->EndFrame();
-      }
-      catch (vk::OutOfDateKHRError err)
-      {
-        core->WaitIdle();
-        inFlightQueue.reset();
-      }
-
-      prevMousePos = mousePos;
+      std::cout << "File " << configFilename << ", parsing successful\n";
     }
+    else
+    {
+      std::cout << "Error: File " << configFilename << ", parsing failed with errors: " << reader.getFormattedErrorMessages() << "\n";
+    }
+    Scene scene(configRoot["scene"], core.get(), geomType);
+
+    std::unique_ptr<BaseRenderer> renderer;
+
+
+    renderer = CreateRenderer(core.get(), rendererName);
+
+    renderer->RecreateSceneResources(&scene);
+
+    std::unique_ptr<legit::InFlightQueue> inFlightQueue;
+
+    Camera light;
+    //light.pos = glm::vec3(0.5f, 2.7f, -0.5f);
+    light.pos = glm::vec3(0.0f, 5.0f, 0.0f);
+    light.vertAngle = 3.1415f / 2.0f;
+
+    Camera camera;
+    camera.pos = glm::vec3(0.0f, 0.5f, -2.0f);
+
+    auto startTime = std::chrono::system_clock::now();
+
+    auto prevFrameTime = startTime;
+    size_t framesCount = 0;
+
+    glm::f64vec2 mousePos;
+    glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
+
+    glm::f64vec2 prevMousePos = mousePos;
+
+    size_t frameIndex = 0;
+    while (!(isClosed = glfwWindowShouldClose(window)) && currDemo == nextDemo)
+    {
+      auto currFrameTime = std::chrono::system_clock::now();
+      float deltaTime = std::chrono::duration<float>(currFrameTime - prevFrameTime).count();
+      prevFrameTime = currFrameTime;
+
+      glfwPollEvents();
+      {
+        imguiRenderer.ProcessInput(window);
+
+        glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
+
+        if (!inFlightQueue)
+        {
+          std::cout << "recreated\n";
+          core->ClearCaches();
+          //core->GetRenderGraph()->Clear();
+          inFlightQueue = std::unique_ptr<legit::InFlightQueue>(new legit::InFlightQueue(core.get(), windowDesc, 2, vk::PresentModeKHR::eMailbox));
+          renderer->RecreateSwapchainResources(inFlightQueue->GetImageSize(), inFlightQueue->GetInFlightFramesCount());
+          imguiRenderer.RecreateSwapchainResources(inFlightQueue->GetImageSize(), inFlightQueue->GetInFlightFramesCount());
+        }
+
+        auto& imguiIO = ImGui::GetIO();
+        imguiIO.DeltaTime = 1.0f / 60.0f;              // set the time elapsed since the previous frame (in seconds)
+        imguiIO.DisplaySize.x = float(inFlightQueue->GetImageSize().width);             // set the current display width
+        imguiIO.DisplaySize.y = float(inFlightQueue->GetImageSize().height);             // set the current display height here
+
+        if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+        {
+          glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.0f);
+
+          if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
+          {
+            float mouseSpeed = 0.01f;
+            if (mousePos != prevMousePos)
+              renderer->ChangeView();
+            camera.horAngle += float((mousePos - prevMousePos).x * mouseSpeed);
+            camera.vertAngle += float((mousePos - prevMousePos).y * mouseSpeed);
+          }
+          glm::mat4 cameraTransform = camera.GetTransformMatrix();
+          glm::vec3 cameraForward = glm::vec3(cameraTransform * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+          glm::vec3 cameraRight = glm::vec3(cameraTransform * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
+          glm::vec3 cameraUp = glm::vec3(cameraTransform * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+
+
+          if (glfwGetKey(window, GLFW_KEY_E))
+            dir += glm::vec3(0.0f, -0.0f, 1.0f);
+          if (glfwGetKey(window, GLFW_KEY_S))
+            dir += glm::vec3(-1.0f, 0.0f, 0.0f);
+          if (glfwGetKey(window, GLFW_KEY_D))
+            dir += glm::vec3(0.0f, 0.0f, -1.0f);
+          if (glfwGetKey(window, GLFW_KEY_F))
+            dir += glm::vec3(1.0f, 0.0f, 0.0f);
+          if (glfwGetKey(window, GLFW_KEY_SPACE))
+            dir += glm::vec3(0.0f, 1.0f, 0.0f);
+          if (glfwGetKey(window, GLFW_KEY_C))
+            dir += glm::vec3(0.0f, -1.0f, 0.0f);
+
+          if (glm::length(dir) > 0.0f)
+            renderer->ChangeView();
+
+          float cameraSpeed = 3.0f;
+          camera.pos += cameraForward * dir.z * cameraSpeed * deltaTime;
+          camera.pos += cameraRight * dir.x * cameraSpeed * deltaTime;
+          camera.pos += cameraUp * dir.y * cameraSpeed * deltaTime;
+
+          if (glfwGetKey(window, GLFW_KEY_V))
+          {
+            renderer->ReloadShaders();
+          }
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_1))
+        {
+          nextDemo = 0;
+          glfwSetWindowShouldClose(window, GLFW_TRUE);
+        }
+
+        const uint32_t FrameSetIndex = 0;
+        const uint32_t PassSetIndex = 1;
+        const uint32_t DrawCallSetIndex = 2;
+
+        try
+        {
+          auto frameInfo = inFlightQueue->BeginFrame();
+          {
+            ImGuiScopedFrame scopedFrame;
+
+            auto& gpuProfilerData = inFlightQueue->GetLastFrameGpuProfilerData();
+            auto& cpuProfilerData = inFlightQueue->GetLastFrameCpuProfilerData();
+
+            {
+              auto passCreationTask = inFlightQueue->GetCpuProfiler().StartScopedTask("PassCreation", legit::Colors::orange);
+              renderer->RenderFrame(frameInfo, camera, light, &scene, window);
+            }
+            if (!profilersWindow.stopProfiling)
+            {
+              auto profilersTask = inFlightQueue->GetCpuProfiler().StartScopedTask("Prf processing", legit::Colors::sunFlower);
+
+              profilersWindow.gpuGraph.LoadFrameData(gpuProfilerData.data(), gpuProfilerData.size());
+              profilersWindow.cpuGraph.LoadFrameData(cpuProfilerData.data(), cpuProfilerData.size());
+            }
+
+            {
+              auto profilersTask = inFlightQueue->GetCpuProfiler().StartScopedTask("Prf rendering", legit::Colors::belizeHole);
+              profilersWindow.Render();
+            }
+
+            ImGui::Begin("Demo controls", 0, ImGuiWindowFlags_NoScrollbar);
+            {
+              ImGui::Text("esdf, c, space: move camera");
+              ImGui::Text("v: live reload shaders");
+              //ImGui::LabelText("right mouse button: rotate camera");
+              ImGui::RadioButton("WaterRenderer", &nextDemo, 0);
+              ImGui::RadioButton("PointRenderer", &nextDemo, 1);
+              ImGui::RadioButton("SSVGIRenderer", &nextDemo, 2);
+              ImGui::RadioButton("VolumeRenderer", &nextDemo, 3);
+            }
+            ImGui::End();
+
+            //ImGui::ShowStyleEditor();
+            //ImGui::ShowDemoWindow();
+
+
+            ImGui::Render();
+            imguiRenderer.RenderFrame(frameInfo, window, ImGui::GetDrawData());
+          }
+          inFlightQueue->EndFrame();
+        }
+        catch (vk::OutOfDateKHRError err)
+        {
+          core->WaitIdle();
+          inFlightQueue.reset();
+        }
+
+        prevMousePos = mousePos;
+      }
+    }
+
+    core->WaitIdle();
   }
-
-  core->WaitIdle();
-
   glfwDestroyWindow(window);
   return isClosed ? -1 : nextDemo;
 }
@@ -332,9 +333,9 @@ int main(int argsCount, char **args)
   //FFT_Run();
   glfwInit();
 
-  size_t currDemo = 0;
+  int currDemo = 0;
 
-  while (currDemo != size_t(-1))
+  while (currDemo != -1)
   {
     currDemo = RunDemo(currDemo);
   }

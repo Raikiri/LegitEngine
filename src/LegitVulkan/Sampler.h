@@ -12,7 +12,7 @@ namespace legit
     {
       return std::tie(samplerHandle.get()) < std::tie(other.samplerHandle.get());
     }
-    Sampler(vk::Device logicalDevice, vk::SamplerAddressMode addressMode, vk::Filter minMagFilterType, vk::SamplerMipmapMode mipFilterType, bool useComparison = false)
+    Sampler(vk::Device logicalDevice, vk::SamplerAddressMode addressMode, vk::Filter minMagFilterType, vk::SamplerMipmapMode mipFilterType, bool useComparison = false, vk::BorderColor borderColor = vk::BorderColor())
     {
       auto samplerCreateInfo = vk::SamplerCreateInfo()
         .setAddressModeU(addressMode)
@@ -20,13 +20,14 @@ namespace legit
         .setAddressModeW(addressMode)
         .setAnisotropyEnable(false)
         .setCompareEnable(useComparison)
-        .setCompareOp(useComparison ? vk::CompareOp::eLessOrEqual : vk::CompareOp::eAlways )
+        .setCompareOp(useComparison ? vk::CompareOp::eLessOrEqual : vk::CompareOp::eAlways)
         .setMagFilter(minMagFilterType)
         .setMinFilter(minMagFilterType)
         .setMaxLod(1e7f)
         .setMinLod(0.0f)
         .setMipmapMode(mipFilterType)
-        .setUnnormalizedCoordinates(false);
+        .setUnnormalizedCoordinates(false)
+        .setBorderColor(borderColor);
 
       samplerHandle = logicalDevice.createSamplerUnique(samplerCreateInfo);
     }

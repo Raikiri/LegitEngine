@@ -1,11 +1,11 @@
 #include <vector>
 namespace vk
 {
-  bool operator < (const vk::VertexInputBindingDescription &desc0, const vk::VertexInputBindingDescription &desc1)
+  static bool operator < (const vk::VertexInputBindingDescription &desc0, const vk::VertexInputBindingDescription &desc1)
   {
     return std::tie(desc0.binding, desc0.inputRate, desc0.stride) < std::tie(desc1.binding, desc1.inputRate, desc1.stride);
   }
-  bool operator < (const vk::VertexInputAttributeDescription &desc0, const vk::VertexInputAttributeDescription &desc1)
+  static bool operator < (const vk::VertexInputAttributeDescription &desc0, const vk::VertexInputAttributeDescription &desc1)
   {
     return std::tie(desc0.binding, desc0.format, desc0.location, desc0.offset) < std::tie(desc1.binding, desc1.format, desc1.location, desc1.offset);
   }
@@ -23,6 +23,9 @@ namespace legit
       vec2,
       vec3,
       vec4,
+      u8vec3,
+      u8vec4,
+      i8vec4,
       color32
     };
     void AddVertexInputBinding(uint32_t bufferBinding, uint32_t stride)
@@ -64,6 +67,9 @@ namespace legit
       case AttribTypes::vec2: return vk::Format::eR32G32Sfloat; break;
       case AttribTypes::vec3: return vk::Format::eR32G32B32Sfloat; break;
       case AttribTypes::vec4: return vk::Format::eR32G32B32A32Sfloat; break;
+      case AttribTypes::u8vec3: return vk::Format::eR8G8B8Unorm; break;
+      case AttribTypes::u8vec4: return vk::Format::eR8G8B8A8Unorm; break;
+      case AttribTypes::i8vec4: return vk::Format::eR8G8B8A8Snorm; break;
       case AttribTypes::color32: return vk::Format::eR8G8B8A8Unorm; break;
       }
       return vk::Format::eUndefined;
