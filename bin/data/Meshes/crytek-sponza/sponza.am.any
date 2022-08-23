@@ -1,0 +1,14 @@
+// -*- c++ -*-
+// Converts the Crytek Sponza to a convenient scale for G3D
+ArticulatedModel::Specification {
+    filename = "sponza.obj";
+
+    preprocess = ArticulatedModel::Preprocess {
+        xform = Matrix4::scale(0.02);
+
+        // Remove the giant glass (?!) tapestry in the middle.  It is part 0, triList 271
+        program = (
+            remove(0, 271);
+        );
+    };
+};

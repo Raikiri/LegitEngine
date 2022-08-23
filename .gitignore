@@ -13,9 +13,6 @@
 *.zip
 *.pdb
 *.ilk
-*.img
-*.dat
 *_u.spv
 .vs
 /bin/movies/*
-/bin/data/Meshes/*
