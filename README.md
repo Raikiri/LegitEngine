@@ -123,8 +123,8 @@ This is an algorithm for rendering big numbers of transparent particles in sorte
 ![image](https://user-images.githubusercontent.com/1657728/76224694-a6ae5400-6280-11ea-978a-bb5eadaf1ad6.png)
 This is my implementation of this paper http://page.math.tu-berlin.de/~chern/projects/PhDThesis/thesis_reduced.pdf that proposes a way of solving a navier-stokes system of hydrodynamics equations by transforming them into shrodinger's equations that are easier to solve. Shrodinger equations are solved analytically in spectral domain, transformation is done via 3d FFT that's implemented for GPU as well via a compute shader. Point sprite renderer is used to visualize flow direction. Here's a link to more gifs: https://imgur.com/gallery/fIkx6rC
 
-#Licensing
-You're free to use any parts of this code in your private as well as commercial projects as long you leave an attribution somewhere. MIT license, basically. I'd also appreciate if you let me know that you found it useful.
+# Licensing
+You're free to use any parts of this code in your private as well as commercial projects as long you leave an attribution somewhere. MIT license, basically. I'd also appreciate if you let me know that you found it useful. The rights to all of the models, volumes and textures in this repo, however, belong to their respective owners (not me).
 
 # What can it not do?
 This is not a multirender abstraction over GAPI. It's too low level for that and is designed specifically to make interaction with vulkan more pleasant. It's also not multithreaded. Async resource streaming needs to be implemented outside of the framework. This framework is far from being optimized : it uses many unnecessary allocations here and there, all caches are done on std::map's instead of hash maps, simply because my main priority is its macro-architecture, not micro-optimizations that can always come later if/when needed.
