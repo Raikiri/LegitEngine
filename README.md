@@ -1,5 +1,7 @@
 # LegitEngine
-This is thin rendergraph-based layer between vulkan and you that does most of the synchronization and resource management so that you don't have to. Quite legit too.
+![multiplatform build](https://github.com/Raikiri/LegitEngine/actions/workflows/cmake-multi-platform.yml/badge.svg)
+
+This is a thin rendergraph-based layer between vulkan and you. It does most of the synchronization and resource management so that you don't have to. It's also quite legit.
 
 # Why?
 If you have tried learning vulkan from the popular online tutorials, you're probably used to thinking that vulkan is extremely verbose and cumbersome API that leads to unreadable blocks of monocode such as example from https://vulkan-tutorial.com/ :
