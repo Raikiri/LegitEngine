@@ -73,6 +73,7 @@ public:
           {
             meshData = MeshData::GeneratePointMeshSized(meshData, 1);
           }break;
+          default:{}break;
         }
         auto mesh = std::unique_ptr<Mesh>(new Mesh(meshData, core->GetPhysicalDevice(), core->GetLogicalDevice(), transferCommandBuffer));
         meshes.push_back(std::move(mesh));

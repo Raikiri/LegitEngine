@@ -90,7 +90,8 @@ namespace detail
 
 		std::vector<char> Data(static_cast<std::size_t>(End - Beg));
 
-		std::fread(&Data[0], 1, Data.size(), File);
+		int res = std::fread(&Data[0], 1, Data.size(), File);
+		assert(res > 0);
 		std::fclose(File);
 
 		return load_kmg(&Data[0], Data.size());

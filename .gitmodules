@@ -1,3 +1,6 @@
 [submodule "src/ImGuiUtils"]
 	path = src/ImGuiUtils
 	url = https://github.com/Raikiri/LegitProfiler
+[submodule "dependencies/LegitVulkan"]
+	path = dependencies/LegitVulkan
+	url = https://github.com/Raikiri/LegitVulkan.git

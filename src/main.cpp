@@ -12,10 +12,7 @@
 
 #include <iostream>
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+#include "LegitGLFW/LegitGLFW.h"
 
 #include "json/json.h"
 #include <chrono>
@@ -41,8 +38,8 @@ glm::uvec3 ReadJsonVec3u(Json::Value vectorValue)
 #include "Scene/Mesh.h"
 #include "Scene/Scene.h"
 #include "imgui.h"
-#include "ImGuiUtils/ImGuiProfilerRenderer.h"
-#include "Render/Common/ImGuiRenderer.h"
+#include "LegitProfiler/ImGuiProfilerRenderer.h"
+#include "LegitImGui/ImGuiRenderer.h"
 #include "Render/Renderers/BaseRenderer.h"
 #include "Render/Renderers/SSVGIRenderer.h"
 #include "Render/Renderers/VolumeRenderer.h"
@@ -77,7 +74,14 @@ std::unique_ptr<BaseRenderer> CreateRenderer(legit::Core* core, std::string name
   return nullptr;
 }
 
-int RunDemo(int currDemo)
+glm::uvec2 GetGlfwWindowClientSize(GLFWwindow *window)
+{
+  int width = 0, height = 0;
+  glfwGetWindowSize(window, &width, &height);
+  return {width, height};
+}
+
+int RunDemo(int currDemo, legit::WindowFactory::Window *window)
 {
   std::string configFilename;
   Scene::GeometryTypes geomType;
@@ -85,27 +89,27 @@ int RunDemo(int currDemo)
 
   if(currDemo == 0)
   {
-    configFilename = "../data/scenes/DummyScene.json";
+    configFilename = "../data/Scenes/DummyScene.json";
     geomType = Scene::GeometryTypes::Triangles;
     rendererName = "WaterRenderer";
   }
 
   if (currDemo == 1)
   {
-    configFilename = "../data/scenes/SponzaSceneLight.json";
+    configFilename = "../data/Scenes/SponzaSceneLight.json";
     geomType = Scene::GeometryTypes::SizedPoints;
     rendererName = "PointRenderer";
   }
 
   if (currDemo == 2)
   {
-    configFilename = "../data/scenes/SponzaScene.json";
+    configFilename = "../data/Scenes/SponzaScene.json";
     geomType = Scene::GeometryTypes::Triangles;
     rendererName = "SSVGIRenderer";
   }
   if(currDemo == 3)
   {
-    configFilename = "../data/scenes/DummyScene.json";
+    configFilename = "../data/Scenes/DummyScene.json";
     geomType = Scene::GeometryTypes::Triangles;
     rendererName = "VolumeRenderer";
   }
@@ -115,25 +119,19 @@ int RunDemo(int currDemo)
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  GLFWwindow* window = glfwCreateWindow(1024, 1024, "Legit Vulkan renderer", nullptr, nullptr);
   {
-    //uint32_t glfwExtensionCount = 0;
-    //const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    const char* glfwExtensions[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
-    uint32_t glfwExtensionCount = sizeof(glfwExtensions) / sizeof(glfwExtensions[0]);
-
-    legit::WindowDesc windowDesc = {};
-    windowDesc.hInstance = GetModuleHandle(NULL);
-    windowDesc.hWnd = glfwGetWin32Window(window);
-
     bool enableDebugging = false;
     #if defined LEGIT_ENABLE_DEBUGGING
     enableDebugging = true;
     #endif
+    
+    legit::WindowDesc windowDesc = window->GetWindowDesc();
 
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     auto core = std::make_unique<legit::Core>(glfwExtensions, glfwExtensionCount, &windowDesc, enableDebugging);
 
-    ImGuiRenderer imguiRenderer(core.get(), window);
+    ImGuiRenderer imguiRenderer(core.get(), window->glfw_window);
     ImGuiUtils::ProfilersWindow profilersWindow;
 
     Json::Value configRoot;
@@ -179,12 +177,12 @@ int RunDemo(int currDemo)
     size_t framesCount = 0;
 
     glm::f64vec2 mousePos;
-    glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
+    glfwGetCursorPos(window->glfw_window, &mousePos.x, &mousePos.y);
 
     glm::f64vec2 prevMousePos = mousePos;
 
     size_t frameIndex = 0;
-    while (!(isClosed = glfwWindowShouldClose(window)) && currDemo == nextDemo)
+    while (!(isClosed = glfwWindowShouldClose(window->glfw_window)) && currDemo == nextDemo)
     {
       auto currFrameTime = std::chrono::system_clock::now();
       float deltaTime = std::chrono::duration<float>(currFrameTime - prevFrameTime).count();
@@ -192,16 +190,16 @@ int RunDemo(int currDemo)
 
       glfwPollEvents();
       {
-        imguiRenderer.ProcessInput(window);
+        imguiRenderer.ProcessInput(window->glfw_window);
 
-        glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
+        glfwGetCursorPos(window->glfw_window, &mousePos.x, &mousePos.y);
 
         if (!inFlightQueue)
         {
           std::cout << "recreated\n";
           core->ClearCaches();
           //core->GetRenderGraph()->Clear();
-          inFlightQueue = std::unique_ptr<legit::InFlightQueue>(new legit::InFlightQueue(core.get(), windowDesc, 2, vk::PresentModeKHR::eMailbox));
+          inFlightQueue = std::unique_ptr<legit::InFlightQueue>(new legit::InFlightQueue(core.get(), windowDesc, GetGlfwWindowClientSize(window->glfw_window), 2, vk::PresentModeKHR::eMailbox));
           renderer->RecreateSwapchainResources(inFlightQueue->GetImageSize(), inFlightQueue->GetInFlightFramesCount());
           imguiRenderer.RecreateSwapchainResources(inFlightQueue->GetImageSize(), inFlightQueue->GetInFlightFramesCount());
         }
@@ -215,7 +213,7 @@ int RunDemo(int currDemo)
         {
           glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.0f);
 
-          if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
+          if (glfwGetMouseButton(window->glfw_window, GLFW_MOUSE_BUTTON_2))
           {
             float mouseSpeed = 0.01f;
             if (mousePos != prevMousePos)
@@ -229,17 +227,17 @@ int RunDemo(int currDemo)
           glm::vec3 cameraUp = glm::vec3(cameraTransform * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
 
 
-          if (glfwGetKey(window, GLFW_KEY_E))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_E))
             dir += glm::vec3(0.0f, -0.0f, 1.0f);
-          if (glfwGetKey(window, GLFW_KEY_S))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_S))
             dir += glm::vec3(-1.0f, 0.0f, 0.0f);
-          if (glfwGetKey(window, GLFW_KEY_D))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_D))
             dir += glm::vec3(0.0f, 0.0f, -1.0f);
-          if (glfwGetKey(window, GLFW_KEY_F))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_F))
             dir += glm::vec3(1.0f, 0.0f, 0.0f);
-          if (glfwGetKey(window, GLFW_KEY_SPACE))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_SPACE))
             dir += glm::vec3(0.0f, 1.0f, 0.0f);
-          if (glfwGetKey(window, GLFW_KEY_C))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_C))
             dir += glm::vec3(0.0f, -1.0f, 0.0f);
 
           if (glm::length(dir) > 0.0f)
@@ -250,16 +248,16 @@ int RunDemo(int currDemo)
           camera.pos += cameraRight * dir.x * cameraSpeed * deltaTime;
           camera.pos += cameraUp * dir.y * cameraSpeed * deltaTime;
 
-          if (glfwGetKey(window, GLFW_KEY_V))
+          if (glfwGetKey(window->glfw_window, GLFW_KEY_V))
           {
             renderer->ReloadShaders();
           }
         }
 
-        if (glfwGetKey(window, GLFW_KEY_1))
+        if (glfwGetKey(window->glfw_window, GLFW_KEY_1))
         {
           nextDemo = 0;
-          glfwSetWindowShouldClose(window, GLFW_TRUE);
+          glfwSetWindowShouldClose(window->glfw_window, GLFW_TRUE);
         }
 
         const uint32_t FrameSetIndex = 0;
@@ -277,7 +275,7 @@ int RunDemo(int currDemo)
 
             {
               auto passCreationTask = inFlightQueue->GetCpuProfiler().StartScopedTask("PassCreation", legit::Colors::orange);
-              renderer->RenderFrame(frameInfo, camera, light, &scene, window);
+              renderer->RenderFrame(frameInfo, camera, light, &scene, window->glfw_window);
             }
             if (!profilersWindow.stopProfiling)
             {
@@ -309,7 +307,7 @@ int RunDemo(int currDemo)
 
 
             ImGui::Render();
-            imguiRenderer.RenderFrame(frameInfo, window, ImGui::GetDrawData());
+            imguiRenderer.RenderFrame(frameInfo, window->glfw_window, ImGui::GetDrawData());
           }
           inFlightQueue->EndFrame();
         }
@@ -325,23 +323,18 @@ int RunDemo(int currDemo)
 
     core->WaitIdle();
   }
-  glfwDestroyWindow(window);
   return isClosed ? -1 : nextDemo;
 }
 int main(int argsCount, char **args)
 {
-  //FFT_Run();
-  glfwInit();
-
   int currDemo = 0;
-
+  auto windowFactory = legit::WindowFactory();
+  auto window = windowFactory.Create(1024, 1024, "Legit engine!", nullptr, nullptr);
   while (currDemo != -1)
   {
-    currDemo = RunDemo(currDemo);
+    currDemo = RunDemo(currDemo, window.get());
   }
   
-
-  glfwTerminate();
 
   return 0;
 }

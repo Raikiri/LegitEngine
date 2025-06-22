@@ -1,5 +1,6 @@
 /*
- * Copyright 2018 Arm Limited
+ * Copyright 2018-2021 Arm Limited
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,19 @@
  * limitations under the License.
  */
 
+/*
+ * At your option, you may choose to accept this material under either:
+ *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
+ *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
+ */
+
 #ifndef SPIRV_CROSS_PARSER_HPP
 #define SPIRV_CROSS_PARSER_HPP
 
 #include "spirv_cross_parsed_ir.hpp"
 #include <stdint.h>
-#include <vector>
 
-namespace spirv_cross
+namespace SPIRV_CROSS_NAMESPACE
 {
 class Parser
 {
@@ -40,6 +46,8 @@ private:
 	ParsedIR ir;
 	SPIRFunction *current_function = nullptr;
 	SPIRBlock *current_block = nullptr;
+	// For workarounds.
+	bool ignore_trailing_block_opcodes = false;
 
 	void parse(const Instruction &instr);
 	const uint32_t *stream(const Instruction &instr) const;
@@ -47,7 +55,8 @@ private:
 	template <typename T, typename... P>
 	T &set(uint32_t id, P &&... args)
 	{
-		auto &var = variant_set<T>(ir.ids.at(id), std::forward<P>(args)...);
+		ir.add_typed_id(static_cast<Types>(T::type), id);
+		auto &var = variant_set<T>(ir.ids[id], std::forward<P>(args)...);
 		var.self = id;
 		return var;
 	}
@@ -55,13 +64,13 @@ private:
 	template <typename T>
 	T &get(uint32_t id)
 	{
-		return variant_get<T>(ir.ids.at(id));
+		return variant_get<T>(ir.ids[id]);
 	}
 
 	template <typename T>
 	T *maybe_get(uint32_t id)
 	{
-		if (ir.ids.at(id).get_type() == T::type)
+		if (ir.ids[id].get_type() == static_cast<Types>(T::type))
 			return &get<T>(id);
 		else
 			return nullptr;
@@ -70,25 +79,25 @@ private:
 	template <typename T>
 	const T &get(uint32_t id) const
 	{
-		return variant_get<T>(ir.ids.at(id));
+		return variant_get<T>(ir.ids[id]);
 	}
 
 	template <typename T>
 	const T *maybe_get(uint32_t id) const
 	{
-		if (ir.ids.at(id).get_type() == T::type)
+		if (ir.ids[id].get_type() == T::type)
 			return &get<T>(id);
 		else
 			return nullptr;
 	}
 
 	// This must be an ordered data structure so we always pick the same type aliases.
-	std::vector<uint32_t> global_struct_cache;
+	SmallVector<uint32_t> global_struct_cache;
+	SmallVector<std::pair<uint32_t, uint32_t>> forward_pointer_fixups;
 
 	bool types_are_logically_equivalent(const SPIRType &a, const SPIRType &b) const;
 	bool variable_storage_is_aliased(const SPIRVariable &v) const;
-	void make_constant_null(uint32_t id, uint32_t type);
 };
-} // namespace spirv_cross
+} // namespace SPIRV_CROSS_NAMESPACE
 
 #endif

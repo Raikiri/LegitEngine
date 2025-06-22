@@ -5,32 +5,32 @@
 		[
 			{
 				"name" : "hornbug",
-				"filename" : "../data/meshes/hornbug.obj",
+				"filename" : "../data/Meshes/hornbug.obj",
 				"scale" : [1.0, 1.0, 1.0]
 			},
 			{
 				"name" : "invertedCube",
-				"filename" : "../data/meshes/InvertedCube.obj",
+				"filename" : "../data/Meshes/InvertedCube.obj",
 				"scale" : [3.0, 1.5, 3.0]
 			},
 			{
 				"name" : "cube",
-				"filename" : "../data/meshes/cube.obj",
+				"filename" : "../data/Meshes/cube.obj",
 				"scale" : [0.5, 0.5, 0.5]
 			},
 			{
 				"name" : "marker",
-				"filename" : "../data/meshes/marker.obj",
+				"filename" : "../data/Meshes/marker.obj",
 				"scale" : [0.1, 0.1, 0.1]
 			}
 			/*{
 				"name" : "obj1",
-				"filename" : "data/meshes/TestBall.obj",
+				"filename" : "data/Meshes/TestBall.obj",
 				"scale" : [0.1, 0.1, 0.1]
 			},*/
 			/*{
 				"name" : "obj2",
-				"filename" : "data/meshes/CubeTest_LP_8k.obj",
+				"filename" : "data/Meshes/CubeTest_LP_8k.obj",
 				"scale" : [0.1, 0.1, 0.1]
 			}*/
 		],

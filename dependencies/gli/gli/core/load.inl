@@ -41,7 +41,7 @@ namespace gli
 
 		std::vector<char> Data(static_cast<std::size_t>(End - Beg));
 
-		std::fread(&Data[0], 1, Data.size(), File);
+		auto _ = std::fread(&Data[0], 1, Data.size(), File);
 		std::fclose(File);
 
 		return load(&Data[0], Data.size());

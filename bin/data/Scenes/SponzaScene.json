@@ -5,28 +5,28 @@
 		[
 			{
 				"name" : "hornbug",
-				"filename" : "../data/meshes/hornbug.obj",
+				"filename" : "../data/Meshes/hornbug.obj",
 				"scale" : [1.0, 1.0, 1.0]
 			},
 			/*{
 				"name" : "bike",
-				"filename" : "data/meshes/bike.obj",
+				"filename" : "data/Meshes/bike.obj",
 				"scale" : [0.02, 0.02, 0.02]
 			},*/
 			
 			{
 				"name" : "sponza",
-				"filename" : "../data/meshes/crytek-sponza/sponza.obj",
+				"filename" : "../data/Meshes/crytek-sponza/sponza.obj",
 				"scale" : [0.01, 0.01, 0.01]
 			},
 			{
 				"name" : "marker",
-				"filename" : "../data/meshes/marker.obj",
+				"filename" : "../data/Meshes/marker.obj",
 				"scale" : [1.1, 1.1, 1.1]
 			},
 			{
 				"name" : "dragon",
-				"filename" : "../data/meshes/dragon.obj",
+				"filename" : "../data/Meshes/dragon.obj",
 				"scale" : [1.1, 1.1, 1.1]
 			}
 		],

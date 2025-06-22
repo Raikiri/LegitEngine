@@ -173,28 +173,29 @@ struct VolumeObject
     VolumeObject res = *this;
     switch (this->volumeData.format)
     {
-    case vk::Format::eR8Unorm:
-    {
-      res.volumeData.format = vk::Format::eR8G8B8A8Unorm;
-      res.volumeData.texelSize = 4 * sizeof(uint8_t);
-      res.volumeData.mips[0].layers[0].offset = 0;
-      res.volumeData.mips[0].size = res.volumeData.baseSize;
-      size_t totalSize = (res.volumeData.baseSize.x * res.volumeData.baseSize.y * res.volumeData.baseSize.z) * res.volumeData.texelSize;
-      res.volumeData.texels.resize(totalSize);
+      case vk::Format::eR8Unorm:
+      {
+        res.volumeData.format = vk::Format::eR8G8B8A8Unorm;
+        res.volumeData.texelSize = 4 * sizeof(uint8_t);
+        res.volumeData.mips[0].layers[0].offset = 0;
+        res.volumeData.mips[0].size = res.volumeData.baseSize;
+        size_t totalSize = (res.volumeData.baseSize.x * res.volumeData.baseSize.y * res.volumeData.baseSize.z) * res.volumeData.texelSize;
+        res.volumeData.texels.resize(totalSize);
 
-      ::CalculateNormals<uint8_t>(this->volumeData.texels.data(), res.volumeData.texels.data(), res.volumeData.baseSize);
+        ::CalculateNormals<uint8_t>(this->volumeData.texels.data(), res.volumeData.texels.data(), res.volumeData.baseSize);
 
-    }break;
-    case vk::Format::eR16Unorm:
-    {
-      res.volumeData.format = vk::Format::eR16G16B16A16Unorm;
-      res.volumeData.texelSize = 4 * sizeof(uint16_t);
-      res.volumeData.mips[0].layers[0].offset = 0;
-      res.volumeData.mips[0].size = res.volumeData.baseSize;
-      size_t totalSize = (res.volumeData.baseSize.x * res.volumeData.baseSize.y * res.volumeData.baseSize.z) * res.volumeData.texelSize;
-      res.volumeData.texels.resize(totalSize);
-      ::CalculateNormals<uint16_t>(this->volumeData.texels.data(), res.volumeData.texels.data(), res.volumeData.baseSize);
-    }break;
+      }break;
+      case vk::Format::eR16Unorm:
+      {
+        res.volumeData.format = vk::Format::eR16G16B16A16Unorm;
+        res.volumeData.texelSize = 4 * sizeof(uint16_t);
+        res.volumeData.mips[0].layers[0].offset = 0;
+        res.volumeData.mips[0].size = res.volumeData.baseSize;
+        size_t totalSize = (res.volumeData.baseSize.x * res.volumeData.baseSize.y * res.volumeData.baseSize.z) * res.volumeData.texelSize;
+        res.volumeData.texels.resize(totalSize);
+        ::CalculateNormals<uint16_t>(this->volumeData.texels.data(), res.volumeData.texels.data(), res.volumeData.baseSize);
+      }break;
+      default:{}break;
     }
     return res;
   }

@@ -313,7 +313,8 @@ namespace detail
 
 		std::vector<char> Data(static_cast<std::size_t>(End - Beg));
 
-		std::fread(&Data[0], 1, Data.size(), File);
+		int r = std::fread(&Data[0], 1, Data.size(), File);
+		assert(r > 0);
 		std::fclose(File);
 
 		return load_dds(&Data[0], Data.size());

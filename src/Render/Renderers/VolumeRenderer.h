@@ -60,11 +60,11 @@ public:
     viewChanged = false;
   }
 
-  void RecreateSceneResources(Scene *scene)
+  void RecreateSceneResources(Scene *scene) override
   {
 
   }
-  void RecreateSwapchainResources(vk::Extent2D viewportExtent, size_t inFlightFramesCount)
+  void RecreateSwapchainResources(vk::Extent2D viewportExtent, size_t inFlightFramesCount) override
   {
     auto createInfo = legit::Image::CreateInfo2d(glm::uvec2(viewportExtent.width, viewportExtent.height), 1, 1, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled);
     accumulatedLight.reset(new legit::Image(core->GetPhysicalDevice(), core->GetLogicalDevice(), createInfo));
@@ -85,7 +85,7 @@ public:
   {
     viewChanged = true;
   }
-  void RenderFrame(const legit::InFlightQueue::FrameInfo &frameInfo, const Camera &camera, const Camera &light, Scene *scene, GLFWwindow *window)
+  void RenderFrame(const legit::InFlightQueue::FrameInfo &frameInfo, const Camera &camera, const Camera &light, Scene *scene, GLFWwindow *window) override
   {
     static float time = 0.0f;
     time += 0.01f;
@@ -198,7 +198,7 @@ public:
     }));
   }
 
-  void ReloadShaders()
+  void ReloadShaders() override
   {
     volumeRendererShader.vertex.reset(new legit::Shader(core->GetLogicalDevice(), "../data/Shaders/spirv/Common/screenspaceQuad.vert.spv"));
     volumeRendererShader.fragment.reset(new legit::Shader(core->GetLogicalDevice(), "../data/Shaders/spirv/VolumeRenderer/volumeRenderer.frag.spv"));

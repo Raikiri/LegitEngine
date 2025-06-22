@@ -1,5 +1,6 @@
 /*
- * Copyright 2015-2018 ARM Limited
+ * Copyright 2015-2021 Arm Limited
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +15,16 @@
  * limitations under the License.
  */
 
+/*
+ * At your option, you may choose to accept this material under either:
+ *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
+ *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
+ */
+
 #include "spirv_cpp.hpp"
 
 using namespace spv;
-using namespace spirv_cross;
+using namespace SPIRV_CROSS_NAMESPACE;
 using namespace std;
 
 void CompilerCPP::emit_buffer_block(const SPIRVariable &var)
@@ -33,7 +40,7 @@ void CompilerCPP::emit_buffer_block(const SPIRVariable &var)
 	emit_block_struct(type);
 	auto buffer_name = to_name(type.self);
 
-	statement("internal::Resource<", buffer_name, type_to_array_glsl(type), "> ", instance_name, "__;");
+	statement("internal::Resource<", buffer_name, type_to_array_glsl(type, var.self), "> ", instance_name, "__;");
 	statement_no_indent("#define ", instance_name, " __res->", instance_name, "__.get()");
 	resource_registrations.push_back(
 	    join("s.register_resource(", instance_name, "__", ", ", descriptor_set, ", ", binding, ");"));
@@ -61,7 +68,7 @@ void CompilerCPP::emit_interface_block(const SPIRVariable &var)
 	else
 		buffer_name = type_to_glsl(type);
 
-	statement("internal::", qual, "<", buffer_name, type_to_array_glsl(type), "> ", instance_name, "__;");
+	statement("internal::", qual, "<", buffer_name, type_to_array_glsl(type, var.self), "> ", instance_name, "__;");
 	statement_no_indent("#define ", instance_name, " __res->", instance_name, "__.get()");
 	resource_registrations.push_back(join("s.register_", lowerqual, "(", instance_name, "__", ", ", location, ");"));
 	statement("");
@@ -93,14 +100,14 @@ void CompilerCPP::emit_uniform(const SPIRVariable &var)
 	if (type.basetype == SPIRType::Image || type.basetype == SPIRType::SampledImage ||
 	    type.basetype == SPIRType::AtomicCounter)
 	{
-		statement("internal::Resource<", type_name, type_to_array_glsl(type), "> ", instance_name, "__;");
+		statement("internal::Resource<", type_name, type_to_array_glsl(type, var.self), "> ", instance_name, "__;");
 		statement_no_indent("#define ", instance_name, " __res->", instance_name, "__.get()");
 		resource_registrations.push_back(
 		    join("s.register_resource(", instance_name, "__", ", ", descriptor_set, ", ", binding, ");"));
 	}
 	else
 	{
-		statement("internal::UniformConstant<", type_name, type_to_array_glsl(type), "> ", instance_name, "__;");
+		statement("internal::UniformConstant<", type_name, type_to_array_glsl(type, var.self), "> ", instance_name, "__;");
 		statement_no_indent("#define ", instance_name, " __res->", instance_name, "__.get()");
 		resource_registrations.push_back(
 		    join("s.register_uniform_constant(", instance_name, "__", ", ", location, ");"));
@@ -123,7 +130,7 @@ void CompilerCPP::emit_push_constant_block(const SPIRVariable &var)
 	auto buffer_name = to_name(type.self);
 	auto instance_name = to_name(var.self);
 
-	statement("internal::PushConstant<", buffer_name, type_to_array_glsl(type), "> ", instance_name, ";");
+	statement("internal::PushConstant<", buffer_name, type_to_array_glsl(type, var.self), "> ", instance_name, ";");
 	statement_no_indent("#define ", instance_name, " __res->", instance_name, ".get()");
 	resource_registrations.push_back(join("s.register_push_constant(", instance_name, "__", ");"));
 	statement("");
@@ -143,6 +150,30 @@ void CompilerCPP::emit_block_struct(SPIRType &type)
 
 void CompilerCPP::emit_resources()
 {
+	for (auto &id : ir.ids)
+	{
+		if (id.get_type() == TypeConstant)
+		{
+			auto &c = id.get<SPIRConstant>();
+
+			bool needs_declaration = c.specialization || c.is_used_as_lut;
+
+			if (needs_declaration)
+			{
+				if (!options.vulkan_semantics && c.specialization)
+				{
+					c.specialization_constant_macro_name =
+					    constant_value_macro_name(get_decoration(c.self, DecorationSpecId));
+				}
+				emit_constant(c);
+			}
+		}
+		else if (id.get_type() == TypeConstantOp)
+		{
+			emit_specialization_constant_op(id.get<SPIRConstantOp>());
+		}
+	}
+
 	// Output all basic struct types which are not Block or BufferBlock as these are declared inplace
 	// when such variables are instantiated.
 	for (auto &id : ir.ids)
@@ -243,8 +274,6 @@ void CompilerCPP::emit_resources()
 	if (emitted)
 		statement("");
 
-	declare_undefined_values();
-
 	statement("inline void init(spirv_cross_shader& s)");
 	begin_scope();
 	statement(resource_type, "::init(s);");
@@ -282,8 +311,7 @@ void CompilerCPP::emit_resources()
 
 string CompilerCPP::compile()
 {
-	// Force a classic "C" locale, reverts when function returns
-	ClassicLocale classic_locale;
+	ir.fixup_reserved_names();
 
 	// Do not deal with ES-isms like precision, older extensions and such.
 	options.es = false;
@@ -296,24 +324,23 @@ string CompilerCPP::compile()
 	backend.basic_uint_type = "uint32_t";
 	backend.swizzle_is_function = true;
 	backend.shared_is_implied = true;
-	backend.flexible_member_array_supported = false;
+	backend.unsized_array_supported = false;
 	backend.explicit_struct_type = true;
 	backend.use_initializer_list = true;
 
+	fixup_type_alias();
+	reorder_type_alias();
 	build_function_control_flow_graphs_and_analyze();
 	update_active_builtins();
 
 	uint32_t pass_count = 0;
 	do
 	{
-		if (pass_count >= 3)
-			SPIRV_CROSS_THROW("Over 3 compilation loops detected. Must be a bug!");
-
 		resource_registrations.clear();
-		reset();
+		reset(pass_count);
 
 		// Move constructor for this type is broken on GCC 4.9 ...
-		buffer = unique_ptr<ostringstream>(new ostringstream());
+		buffer.reset();
 
 		emit_header();
 		emit_resources();
@@ -321,7 +348,7 @@ string CompilerCPP::compile()
 		emit_function(get<SPIRFunction>(ir.default_entry_point), Bitset());
 
 		pass_count++;
-	} while (force_recompile);
+	} while (is_forcing_recompilation());
 
 	// Match opening scope of emit_header().
 	end_scope_decl();
@@ -334,7 +361,7 @@ string CompilerCPP::compile()
 	// Entry point in CPP is always main() for the time being.
 	get_entry_point().name = "main";
 
-	return buffer->str();
+	return buffer.str();
 }
 
 void CompilerCPP::emit_c_linkage()

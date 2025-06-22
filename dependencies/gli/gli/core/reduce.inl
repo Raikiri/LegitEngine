@@ -34,7 +34,7 @@ namespace detail
 
 			sampler1d<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0), SamplerB.template fetch(TexelIndex, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0), SamplerB.template fetch<>(TexelIndex, 0)));
 
 			for(size_type LevelIndex = 0, LevelCount = A.levels(); LevelIndex < LevelCount; ++LevelIndex)
 			{
@@ -42,8 +42,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, LevelIndex)));
 				}
 			}
 			
@@ -64,7 +64,7 @@ namespace detail
 
 			sampler1d_array<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0, 0), SamplerB.template fetch(TexelIndex, 0, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0, 0), SamplerB.template fetch<>(TexelIndex, 0, 0)));
 
 			for(size_type LayerIndex = 0, LayerCount = A.layers(); LayerIndex < LayerCount; ++LayerIndex)
 			for(size_type LevelIndex = 0, LevelCount = A.levels(); LevelIndex < LevelCount; ++LevelIndex)
@@ -73,8 +73,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, LayerIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, LayerIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, LayerIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, LayerIndex, LevelIndex)));
 				}
 			}
 			
@@ -95,7 +95,7 @@ namespace detail
 
 			sampler2d<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0), SamplerB.template fetch(TexelIndex, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0), SamplerB.template fetch<>(TexelIndex, 0)));
 
 			for(size_type LevelIndex = 0, LevelCount = A.levels(); LevelIndex < LevelCount; ++LevelIndex)
 			{
@@ -104,8 +104,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, LevelIndex)));
 				}
 			}
 			
@@ -126,7 +126,7 @@ namespace detail
 
 			sampler2d_array<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0, 0), SamplerB.template fetch(TexelIndex, 0, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0, 0), SamplerB.template fetch<>(TexelIndex, 0, 0)));
 
 			for(size_type LayerIndex = 0, LayerCount = A.layers(); LayerIndex < LayerCount; ++LayerIndex)
 			for(size_type LevelIndex = 0, LevelCount = A.levels(); LevelIndex < LevelCount; ++LevelIndex)
@@ -136,8 +136,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, LayerIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, LayerIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, LayerIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, LayerIndex, LevelIndex)));
 				}
 			}
 			
@@ -158,7 +158,7 @@ namespace detail
 
 			sampler3d<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0), SamplerB.template fetch(TexelIndex, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0), SamplerB.template fetch<>(TexelIndex, 0)));
 
 			for(size_type LevelIndex = 0, LevelCount = A.levels(); LevelIndex < LevelCount; ++LevelIndex)
 			{
@@ -168,8 +168,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, LevelIndex)));
 				}
 			}
 			
@@ -190,7 +190,7 @@ namespace detail
 
 			sampler_cube<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0, 0), SamplerB.template fetch(TexelIndex, 0, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0, 0), SamplerB.template fetch<>(TexelIndex, 0, 0)));
 
 			for(size_type FaceIndex = 0, FaceCount = A.faces(); FaceIndex < FaceCount; ++FaceIndex)
 			for(size_type LevelIndex = 0, LevelCount = A.levels(); LevelIndex < LevelCount; ++LevelIndex)
@@ -200,8 +200,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, FaceIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, FaceIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, FaceIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, FaceIndex, LevelIndex)));
 				}
 			}
 			
@@ -222,7 +222,7 @@ namespace detail
 
 			sampler_cube_array<val_type> const SamplerA(A, gli::WRAP_CLAMP_TO_EDGE), SamplerB(B, gli::WRAP_CLAMP_TO_EDGE);
 			extent_type TexelIndex(0);
-			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch(TexelIndex, 0, 0, 0), SamplerB.template fetch(TexelIndex, 0, 0, 0)));
+			vec<4, val_type> Result(TexelFunc(SamplerA.template fetch<>(TexelIndex, 0, 0, 0), SamplerB.template fetch<>(TexelIndex, 0, 0, 0)));
 
 			for(size_type LayerIndex = 0, LayerCount = A.layers(); LayerIndex < LayerCount; ++LayerIndex)
 			for(size_type FaceIndex = 0, FaceCount = A.faces(); FaceIndex < FaceCount; ++FaceIndex)
@@ -233,8 +233,8 @@ namespace detail
 				for(TexelIndex.x = 0; TexelIndex.x < TexelCount.x; ++TexelIndex.x)
 				{
 					Result = ReduceFunc(Result, TexelFunc(
-						SamplerA.template fetch(TexelIndex, LayerIndex, FaceIndex, LevelIndex),
-						SamplerB.template fetch(TexelIndex, LayerIndex, FaceIndex, LevelIndex)));
+						SamplerA.template fetch<>(TexelIndex, LayerIndex, FaceIndex, LevelIndex),
+						SamplerB.template fetch<>(TexelIndex, LayerIndex, FaceIndex, LevelIndex)));
 				}
 			}
 			

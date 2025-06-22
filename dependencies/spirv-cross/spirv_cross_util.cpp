@@ -1,5 +1,6 @@
 /*
- * Copyright 2015-2018 ARM Limited
+ * Copyright 2015-2021 Arm Limited
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +15,22 @@
  * limitations under the License.
  */
 
+/*
+ * At your option, you may choose to accept this material under either:
+ *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
+ *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
+ */
+
 #include "spirv_cross_util.hpp"
 #include "spirv_common.hpp"
 
 using namespace spv;
-using namespace spirv_cross;
+using namespace SPIRV_CROSS_NAMESPACE;
 
 namespace spirv_cross_util
 {
-void rename_interface_variable(spirv_cross::Compiler &compiler, const std::vector<spirv_cross::Resource> &resources,
-                               uint32_t location, const std::string &name)
+void rename_interface_variable(Compiler &compiler, const SmallVector<Resource> &resources, uint32_t location,
+                               const std::string &name)
 {
 	for (auto &v : resources)
 	{
@@ -49,7 +56,7 @@ void rename_interface_variable(spirv_cross::Compiler &compiler, const std::vecto
 	}
 }
 
-void inherit_combined_sampler_bindings(spirv_cross::Compiler &compiler)
+void inherit_combined_sampler_bindings(Compiler &compiler)
 {
 	auto &samplers = compiler.get_combined_image_samplers();
 	for (auto &s : samplers)
